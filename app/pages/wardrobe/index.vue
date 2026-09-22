@@ -5,6 +5,11 @@ import { SLOT_LABEL, SLOTS, type Slot } from '#shared/outfit'
 const { data: allItems, status: fetchStatus } = await useFetch('/api/items')
 
 type StatusFilter = 'all' | 'owned' | 'wishlist'
+const STATUS_FILTERS: { value: StatusFilter, label: string }[] = [
+  { value: 'all', label: 'ทั้งหมด' },
+  { value: 'owned', label: 'มีแล้ว' },
+  { value: 'wishlist', label: 'อยากได้' },
+]
 const statusFilter = ref<StatusFilter>('all')
 const slotFilter = ref<Slot | 'all'>('all')
 
@@ -46,9 +51,10 @@ const filtered = computed(() => (allItems.value ?? []).filter(i =>
 
     <template v-else>
       <div class="flex gap-1">
-        <UButton label="ทั้งหมด" size="xs" :variant="statusFilter === 'all' ? 'solid' : 'outline'" @click="statusFilter = 'all'" />
-        <UButton label="มีแล้ว" size="xs" :variant="statusFilter === 'owned' ? 'solid' : 'outline'" @click="statusFilter = 'owned'" />
-        <UButton label="อยากได้" size="xs" :variant="statusFilter === 'wishlist' ? 'solid' : 'outline'" @click="statusFilter = 'wishlist'" />
+        <UButton
+          v-for="f in STATUS_FILTERS" :key="f.value" :label="f.label" size="xs"
+          :variant="statusFilter === f.value ? 'solid' : 'outline'" @click="statusFilter = f.value"
+        />
       </div>
       <div class="flex gap-1 overflow-x-auto">
         <UButton label="ทั้งหมด" size="xs" color="neutral" :variant="slotFilter === 'all' ? 'solid' : 'outline'" @click="slotFilter = 'all'" />

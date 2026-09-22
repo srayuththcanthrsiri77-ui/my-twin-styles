@@ -6,14 +6,8 @@ const MAX_LONG_SIDE = 2048 // ย่อก่อนอัปโหลด — ใ
 export async function preparePoseImage(file: File): Promise<{ blob: Blob, metrics: PoseMetrics, previewUrl: string }> {
   const bitmap = await createImageBitmap(file)
   const metrics: PoseMetrics = { width: bitmap.width, height: bitmap.height, brightness: measureBrightness(bitmap) }
-  const scale = Math.min(1, MAX_LONG_SIDE / Math.max(bitmap.width, bitmap.height))
-  const canvas = document.createElement('canvas')
-  canvas.width = Math.round(bitmap.width * scale)
-  canvas.height = Math.round(bitmap.height * scale)
-  canvas.getContext('2d')!.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+  const blob = await resizeBitmapToJpeg(bitmap, MAX_LONG_SIDE)
   bitmap.close()
-  const blob = await new Promise<Blob>((resolve, reject) =>
-    canvas.toBlob(b => (b ? resolve(b) : reject(new Error('แปลงรูปไม่สำเร็จ'))), 'image/jpeg', 0.9))
   return { blob, metrics, previewUrl: URL.createObjectURL(blob) }
 }
 
