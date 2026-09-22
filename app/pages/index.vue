@@ -1,8 +1,11 @@
 <script setup lang="ts">
 // S05 Lookbook — หน้าแรกของแอป · ผู้ใช้ใหม่ที่ยังไม่ข้าม onboarding ถูกพาไป S04 (Q20)
-const { data: progress } = await useFetch('/api/me/progress')
-const { data, status: fetchStatus } = await useFetch('/api/looks')
-const { data: occasions } = await useFetch('/api/occasions')
+// ยิงสามคำขอพร้อมกันแทนการรอทีละอัน (await ...; await ...; await ... = ต่อคิว ช้ากว่า Promise.all)
+const [{ data: progress }, { data, status: fetchStatus }, { data: occasions }] = await Promise.all([
+  useFetch('/api/me/progress'),
+  useFetch('/api/looks'),
+  useFetch('/api/occasions'),
+])
 
 onMounted(() => {
   let skipped = false

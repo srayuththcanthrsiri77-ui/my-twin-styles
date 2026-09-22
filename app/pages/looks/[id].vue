@@ -7,8 +7,11 @@ const route = useRoute()
 const toast = useToast()
 const id = route.params.id as string
 
-const { data: look } = await useFetch(`/api/looks/${id}`)
-const { data: occasions } = await useFetch('/api/occasions')
+// ยิงสองคำขอพร้อมกันแทนการรอทีละอัน (await ...; await ... = ต่อคิว ช้ากว่า Promise.all เท่าตัว)
+const [{ data: look }, { data: occasions }] = await Promise.all([
+  useFetch(`/api/looks/${id}`),
+  useFetch('/api/occasions'),
+])
 
 if (!look.value) {
   throw createError({ statusCode: 404, statusMessage: 'ไม่พบลุคนี้' })
