@@ -8,6 +8,15 @@ export type Slot = typeof SLOTS[number]
 
 export const MAX_ACCESSORIES = 5
 
+// ชื่อช่องภาษาไทยตาม CONTEXT.md — ใช้ในตัวกรองตู้เสื้อผ้าและ Outfit Builder
+export const SLOT_LABEL: Record<Slot, string> = {
+  top: 'เสื้อ',
+  bottom: 'ท่อนล่าง',
+  outer: 'ชั้นนอก',
+  dress: 'เดรส',
+  accessory: 'ส่วนประกอบ',
+}
+
 const outfitEntry = z.object({ slot: z.enum(SLOTS), itemId: z.uuid() })
 
 // ชุด (Outfit) = ท่า + ชิ้นตามช่อง — คำสั่งก่อน generate ไม่ใช่ผลลัพธ์
