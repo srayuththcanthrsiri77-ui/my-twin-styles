@@ -108,7 +108,7 @@ onBeforeUnmount(() => { if (previewUrl.value) URL.revokeObjectURL(previewUrl.val
       </h1>
     </header>
 
-    <input ref="fileInput" type="file" accept="image/*" class="hidden" @change="onFile">
+    <input ref="fileInput" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" @change="onFile">
 
     <!-- S02: guide ก่อนเปิดกล้อง -->
     <template v-if="phase === 'guide'">
