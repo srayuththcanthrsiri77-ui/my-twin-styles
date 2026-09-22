@@ -202,5 +202,52 @@ URL/secret อยู่ใน Vault เพราะ repo public · หน้า�
 
 ---
 
+## [2026-09-22] ต่อ Supabase จริงจบ + แก้บั๊กล็อกอินค้าง + สร้างตู้เสื้อผ้า S08/S09
+
+**ทำอะไร:**
+- เช็ก `.env` เจอ `NUXT_SUPABASE_SECRET_KEY` เป็นคีย์ผิด project (ref ไม่ตรงกับ `SUPABASE_URL`) แถม role เป็น
+  `anon` ไม่ใช่ secret — ชี้ให้ผู้ใช้ไปหยิบจากบล็อก "API Keys" ใหม่ (`sb_secret_...`) ไม่ใช่ "Legacy JWT keys"
+- รัน `npm run db:migrate` สำเร็จ (14 ตาราง, 3 bucket private, pg_cron+pg_net, cron `reconcile-try-ons` active) ·
+  ตั้ง Vault (`app_site_url`, `app_cron_secret`) ให้ตามคำขอของผู้ใช้ — ปกติ `docs/SETUP.md` §2 ให้ผู้ใช้รันเอง
+  ใน SQL Editor แต่ผู้ใช้ขอให้ทำแทนรอบนี้ (ยังไม่เปลี่ยนธรรมเนียมในเอกสาร)
+- เปิด dev server ทดสอบจริง (`.claude/launch.json` ใหม่) — ผู้ใช้ลอง login เองแล้วค้างที่ "กำลังเข้าสู่ระบบ…"
+  ตลอดไป **เจอ root cause จริง:** `@nuxtjs/supabase` (ใช้ `@supabase/ssr` cookie-based) ไม่ exchange
+  `code` เป็น session ให้อัตโนมัติเหมือน client แบบเก่า ต้องเรียก `exchangeCodeForSession()` เองที่หน้า
+  `/auth/confirm` — แก้แล้ว ผู้ใช้ reload หน้าเดิมแล้วเข้าได้จริง
+- สร้าง **ตู้เสื้อผ้า S08 (รายการ + filter สถานะ/ช่อง) + S09 (เพิ่มชิ้น)** ตามแบบ pose ทั้งสาย:
+  `shared/item.ts` (หมวด→ช่องตาม flow เพิ่มชิ้นหน้า 3 ของ .drawio, zod) · `server/utils/item-processing`
+  adapter (ลบพื้นหลัง+เดาหมวด/สี — mock จำลองลบพื้นหลังไม่สำเร็จเสมอ) · `POST /api/items/process` (ประมวลผล
+  ยังไม่บันทึก) · `POST /api/items` (บันทึก) · `GET /api/items` (list พร้อม signed URL) · หน้า `/wardrobe`,
+  `/wardrobe/new` · ต่อ onboarding ② ให้ชี้มาที่นี่ · เพิ่ม `SLOT_LABEL` ใน `shared/outfit.ts`
+- ก่อนเริ่มเขียนหน้าจอ ทวน flow ให้ผู้ใช้ฟังก่อน (ไล่ทั้ง 9 หน้าของ .drawio สรุปว่าอะไรทำแล้ว/ยัง) —
+  ผู้ใช้ยืนยันลำดับ S08/S09 → S11 Builder ตาม onboarding flow
+- ทดสอบจริงผ่าน browser pane ไม่ได้ (ไม่มี session · Claude in Chrome ต่อไม่ติด · ขอ magic link ใหม่โดน
+  email rate limit) เลยให้ผู้ใช้ทดสอบเองในแท็บที่ล็อกอินค้างแทน — ระหว่างรอผล **ทวนโค้ดตัวเองซ้ำเจอบั๊กจริง**:
+  ปุ่ม "เพิ่มชิ้นอีก" หลังบันทึกสำเร็จเผลอเรียก `retake()` (ฟังก์ชันเดียวกับปุ่ม "ถ่ายใหม่") ซึ่งลบรูปที่เพิ่ง
+  บันทึกทิ้งจาก storage — แก้แยก `reset()`/`retake()` ให้ตรงกับ `twin/new.vue` ก่อนผู้ใช้ทดสอบ · ผู้ใช้ยืนยัน
+  เพิ่มชิ้นได้จริง เห็นในตู้เสื้อผ้า
+- เจอ `docs/design/my-twin-styles.drawio` ขึ้น modified หลังรัน `draw.io -x -f png` export (ไม่ใช่แค่เปิด+
+  บันทึกในแอปที่ทำให้ format เปลี่ยน) — เทียบ diff แล้วไม่มี `value=` เปลี่ยนจริงสักตัว (แค่ attribute reorder
+  + dx/dy) เลย `git checkout` ทิ้ง ไม่ commit noise
+
+**ทำไมถึงเลือกแบบนี้:**
+- exchangeCodeForSession ต้องแก้ที่โค้ดแอปเอง เพราะ module ไม่รองรับให้ — ตรวจสอบจาก `node_modules` โดยตรง
+  (ไม่มี `exchangeCodeForSession` ปรากฏที่ไหนในซอร์สของ `@nuxtjs/supabase` เลย) ไม่ใช่การเดา
+- item-processing แยก endpoint process/save เพราะ wireframe S09 ต้องการให้ผู้ใช้เห็นและแก้ค่าที่ AI เดาก่อน
+  บันทึกจริง (ต่างจาก pose ที่ accept/retake อย่างเดียวไม่มีฟอร์มแก้)
+- สถานะเริ่มต้น "มีแล้ว" แต่ auto-suggest "อยากได้" เมื่อใส่ลิงก์ร้าน (ไม่ force) เพราะเป็นกติกาที่ตกลงกันไว้ตั้งแต่
+  รอบออกแบบ (HANDOFF เก่า) — ใช้ flag `statusTouched` กันไม่ให้ auto-suggest ทับค่าที่ผู้ใช้เลือกเองแล้ว
+
+**ผลที่ตามมา / สิ่งที่ต้องระวังต่อไป:**
+- `docs/SETUP.md` §2 ยังเขียนว่าให้ผู้ใช้รันเองใน SQL Editor ทั้งที่รอบนี้ Claude รันแทน — ถ้าจะให้เป็นธรรมเนียม
+  ถาวรว่า Claude ทำได้ ต้องแก้เอกสารให้ตรง (ยังไม่ได้ถาม/แก้)
+- S10 (รายละเอียดชิ้น) ยังไม่ทำ — ข้ามไปก่อนเพราะไม่ใช่ทางบังคับของ onboarding
+- ยังไม่มี nav bar ถาวร (ลุค/ตู้/＋ลอง/โปรไฟล์ ตาม wireframe) — ทุกหน้าตอนนี้เป็น full-screen แยกกัน
+  ต้องทำตอนมีหน้าครบ 4 แท็บจริงถึงจะคุ้ม
+- Supabase ฟรี tier จำกัด email/ชั่วโมงเข้มมาก — ถ้าต้องทดสอบ login ซ้ำ ๆ ควรตั้ง custom SMTP หรือทดสอบผ่าน
+  session ที่ล็อกอินค้างแทนขอ link ใหม่ทุกรอบ
+
+---
+
 ## งานถัดไป
 ดู `HOTCACHE.md`
