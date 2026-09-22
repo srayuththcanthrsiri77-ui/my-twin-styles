@@ -8,9 +8,12 @@ const toast = useToast()
 const fromOnboarding = route.query.from === 'onboarding'
 const doneTo = fromOnboarding ? '/onboarding' : '/'
 
-const { data: poses } = await useFetch('/api/poses')
-const { data: allItems } = await useFetch('/api/items')
-const { data: quota, refresh: refreshQuota } = await useFetch('/api/me/quota')
+// ยิงสามคำขอพร้อมกันแทนการรอทีละอัน (await ...; await ...; await ... = ต่อคิว ช้ากว่า Promise.all)
+const [{ data: poses }, { data: allItems }, { data: quota, refresh: refreshQuota }] = await Promise.all([
+  useFetch('/api/poses'),
+  useFetch('/api/items'),
+  useFetch('/api/me/quota'),
+])
 
 const selectedPoseId = ref<string>()
 const slotSelection = reactive<Record<RenderSlot, string | null>>({ top: null, bottom: null, outer: null, dress: null })
