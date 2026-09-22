@@ -8,6 +8,8 @@ const supabase = useSupabaseClient()
 const user = useSupabaseUser()
 const toast = useToast()
 const fromOnboarding = route.query.from === 'onboarding'
+// มาจาก Builder ที่กำลังเลือกชิ้นใส่ช่องอยู่ → บันทึกเสร็จกลับไปใส่ในช่องนั้นทันที ไม่ต้องผ่านจอ "บันทึกแล้ว" (flow เพิ่มชิ้น)
+const fromBuilder = route.query.from === 'builder'
 const doneTo = fromOnboarding ? '/onboarding' : '/wardrobe'
 
 type Phase = 'pick' | 'processing' | 'confirm' | 'saved'
@@ -84,7 +86,7 @@ async function save() {
   if (!originalPath.value) return
   saving.value = true
   try {
-    await $fetch('/api/items', {
+    const { item } = await $fetch('/api/items', {
       method: 'POST',
       body: {
         storagePath: backgroundRemoved.value && processedPath.value ? processedPath.value : originalPath.value,
@@ -97,6 +99,10 @@ async function save() {
         note: note.value || undefined,
       },
     })
+    if (fromBuilder) {
+      await navigateTo(`/builder?prefill=${item.id}&slot=${item.slot}`)
+      return
+    }
     phase.value = 'saved'
   }
   catch (err) {

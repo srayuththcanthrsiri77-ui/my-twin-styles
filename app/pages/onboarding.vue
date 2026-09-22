@@ -5,7 +5,7 @@ const { data: progress } = await useFetch('/api/me/progress')
 const steps = computed(() => [
   { key: 'twin', title: '① สร้าง twin', hint: 'ถ่ายรูปเต็มตัว 1–5 ท่า', done: !!progress.value?.hasTwin, to: '/twin/new?from=onboarding', ready: true },
   { key: 'items', title: '② เพิ่มชิ้น 2 ชิ้น', hint: 'เสื้อ 1 · ท่อนล่าง 1', done: !!progress.value?.hasOutfitItems, to: '/wardrobe/new?from=onboarding', ready: true },
-  { key: 'try', title: '③ ลองชุดแรก', hint: 'ให้ AI ลองบน twin ของคุณ', done: !!progress.value?.hasLook, to: '', ready: false },
+  { key: 'try', title: '③ ลองชุดแรก', hint: 'ให้ AI ลองบน twin ของคุณ', done: !!progress.value?.hasLook, to: '/builder?from=onboarding', ready: true },
 ])
 const doneCount = computed(() => steps.value.filter(s => s.done).length)
 // ปุ่มทึบได้แค่ขั้นแรกที่ยังไม่เสร็จ (ui-decision §3) ที่เหลือเป็น outline
