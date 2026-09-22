@@ -22,22 +22,29 @@ export default defineEventHandler(async (event) => {
       tx.select({ reason: lookDislikes.reason }).from(lookDislikes).where(eq(lookDislikes.lookId, look.id)),
     ])
 
+    // เซ็นรูปลุค + รูปทุกชิ้นพร้อมกัน — ก่อนหน้านี้ `await sign()` ทีละ property ทำให้รูปลุครอเสร็จ
+    // ก่อนถึงเริ่มเซ็นรูปชิ้นได้ (บั๊กเดียวกับ useFetch ต่อกันฝั่งหน้าเว็บ)
+    const [imageUrl, itemsWithUrls] = await Promise.all([
+      sign('looks', look.imagePath),
+      Promise.all(usedItems.map(async u => ({
+        slot: u.slot,
+        id: u.item?.id ?? null,
+        name: u.item?.name ?? null,
+        category: u.item?.category ?? null,
+        // ชิ้นที่ถูกลบไปแล้ว → item เป็น null (FK item_id set null on delete)
+        imageUrl: u.item ? await sign('items', u.item.imagePath) : null,
+      }))),
+    ])
+
     return {
       id: look.id,
-      imageUrl: await sign('looks', look.imagePath),
+      imageUrl,
       isFavorite: look.isFavorite,
       note: look.note,
       createdAt: look.createdAt,
       occasionIds: occasionRows.map(o => o.occasionId),
       dislikeReason: dislike?.reason ?? null,
-      // ชิ้นที่ถูกลบไปแล้ว → item เป็น null (FK item_id set null on delete)
-      items: await Promise.all(usedItems.map(async u => ({
-        slot: u.slot,
-        id: u.item?.id ?? null,
-        name: u.item?.name ?? null,
-        category: u.item?.category ?? null,
-        imageUrl: u.item ? await sign('items', u.item.imagePath) : null,
-      }))),
+      items: itemsWithUrls,
     }
   })
 })

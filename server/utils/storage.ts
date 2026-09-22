@@ -5,7 +5,9 @@ import { serverSupabaseClient } from '#supabase/server'
 export async function userStorageSigner(event: H3Event) {
   const storage = (await serverSupabaseClient(event)).storage
   return async (bucket: 'poses' | 'items' | 'looks', path: string, expiresIn = 600) => {
+    const t0 = Date.now() // TODO(perf-debug): ลบ timing log นี้หลังหาสาเหตุหน้าโหลดช้าเจอแล้ว
     const { data, error } = await storage.from(bucket).createSignedUrl(path, expiresIn)
+    console.log(`[timing] createSignedUrl ${bucket}/${path} ${event.path} ${Date.now() - t0}ms`)
     if (error || !data) throw error ?? new Error('sign failed')
     return data.signedUrl
   }

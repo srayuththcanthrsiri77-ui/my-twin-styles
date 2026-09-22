@@ -21,12 +21,15 @@ export async function withUserDb<T>(event: H3Event, fn: (tx: Tx, userId: string)
   const user = await requireUser(event)
   const { db, close } = openDb(event)
   try {
-    return await db.transaction(async (tx) => {
+    const tTx0 = Date.now() // TODO(perf-debug): ลบ timing log นี้หลังหาสาเหตุหน้าโหลดช้าเจอแล้ว
+    const result = await db.transaction(async (tx) => {
       const claims = JSON.stringify({ sub: user.id, role: 'authenticated' })
       await tx.execute(sql`select set_config('request.jwt.claims', ${claims}, true)`)
       await tx.execute(sql`set local role authenticated`)
       return fn(tx, user.id)
     })
+    console.log(`[timing] db.transaction (รวม connect ครั้งแรก + query) ${event.path} ${Date.now() - tTx0}ms`)
+    return result
   }
   finally {
     await close()
