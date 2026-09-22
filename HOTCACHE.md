@@ -48,6 +48,9 @@ Mobile-first PWA (UI ไทย) — ผู้ใช้สร้าง twin จ�
 - **`@nuxtjs/supabase` ไม่ exchangeCodeForSession ให้เอง** — เรียกเองที่ `/auth/confirm` · magic link
   เป็น PKCE ต้องขอ/กดเบราว์เซอร์เดียวกัน · browser pane เข้า `supabase.co` ตรงไม่ได้ → route ที่ต้องล็อกอิน
   verify ได้แค่ curl เช็ก 401 ไม่ใช่ full flow จริง
+- **`await useFetch()` หลายบรรทัดติดกันในหน้าเดียว = ยิงเรียงคิว ไม่ใช่พร้อมกัน** (ผู้ใช้เจอว่าหน้า
+  Lookbook/รายละเอียดลุคช้า) — แก้แล้วที่ `/`, `/looks/[id]`, `/builder` ด้วย `Promise.all([useFetch(...),...])`
+  ตรวจหน้าใหม่ที่ fetch มากกว่า 1 อย่างเสมอ
 - เปิด .drawio ใน draw.io แล้วบันทึก/export = จัด format ใหม่ทั้งไฟล์ (noise ไม่ใช่เนื้อหาเปลี่ยน)
 - เครื่องนี้ไม่มี Postgres มาก่อน — `brew install postgresql@16` ถาวรแล้ว แต่คลัสเตอร์ทดสอบต้องสร้างใหม่
   ทุกเซสชันตามสูตรใน HANDOFF · `export PATH=".../postgresql@16/bin:$PATH"` ก่อน
