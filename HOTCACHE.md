@@ -15,10 +15,11 @@ Mobile-first PWA (UI ไทย) — ผู้ใช้สร้าง twin จ�
 - ✅ ล็อกอินจริงใช้ได้ (magic link)
 - ✅ หน้าจอทดสอบผ่าน `npm run dev` แล้ว: S01 login · S04 onboarding · S02/S03 ถ่ายท่า ·
   S08 ตู้เสื้อผ้า + S09 เพิ่มชิ้น · S11 Outfit Builder + S12 เลือกชิ้น (onboarding ①②③ ต่อกันครบ)
-- ✅ **S05 Lookbook + S06 รายละเอียดลุค เสร็จแล้ว** (2026-09-23 — **ยัง verify ผ่านเบราว์เซอร์ล็อกอินจริง
-  ไม่ได้** ตรวจแค่ `npm run check` + curl route ใหม่เช็ก 401 ไม่ error → ผู้ใช้ลองจริงผ่าน `npm run dev`):
-  `/` = ลุคจริง (การลองค้างอยู่ด้านบน · filter โอกาส/⭐ · empty state) · `/looks/[id]` = รูปลุค · ชิ้นที่ใช้
-  (รวม accessory) · โอกาส (เลือก/ตั้งเอง) · ⭐ · โน้ต · 👎 · Remix/แชร์ disabled "เร็ว ๆ นี้" (รอ S07/S13-14)
+- ✅ **S05 Lookbook + S06 รายละเอียดลุค เสร็จแล้ว — ผู้ใช้ verify จริงผ่าน `npm run dev` แล้วว่าใช้ได้**
+  (2026-09-23 — screenshot ยืนยัน filter/รูปลุค/ชิ้นที่ใช้/โอกาส/โน้ต/Remix-แชร์ disabled ทำงานถูกต้อง
+  รูป "ลุคตัวอย่าง (mock)" ที่เห็นคือ placeholder ของ mock adapter เอง ไม่ใช่บั๊ก): `/` = ลุคจริง (การลอง
+  ค้างอยู่ด้านบน · filter โอกาส/⭐ · empty state) · `/looks/[id]` = รูปลุค · ชิ้นที่ใช้ (รวม accessory) ·
+  โอกาส (เลือก/ตั้งเอง) · ⭐ · โน้ต · 👎 · Remix/แชร์ disabled "เร็ว ๆ นี้" (รอ S07/S13-14)
   API ใหม่: `/api/looks`, `/api/occasions`, `/api/looks/[id]/occasions`, `/api/looks/[id]/dislike`
   ผ่าน `withUserDb` ทั้งหมด **ไม่มี migration ใหม่** (ตาราง/RLS/grant มีจาก data model เดิม)
 - ✅ `npm run test:db` ผ่านครบ 18 ข้อบน Postgres จริง · `npm run check` ผ่าน (typecheck + unit 42)
@@ -33,11 +34,10 @@ Mobile-first PWA (UI ไทย) — ผู้ใช้สร้าง twin จ�
 4. query ในนามผู้ใช้ผ่าน `withUserDb()` เท่านั้น — Drizzle owner ข้าม RLS (ADR-0006)
 
 ## งานถัดไป
-1. **ผู้ใช้ทดสอบ S05/S06 จริงผ่าน `npm run dev`** แล้วบอกผล (ยังไม่ verify ผ่านเบราว์เซอร์ล็อกอินจริง)
-2. S07 Remix เทียบคู่ — `outfitSchema`/`start_try_on()` รองรับ `remixOfLookId` แล้ว เหลือแค่หน้าจอ +
+1. S07 Remix เทียบคู่ — `outfitSchema`/`start_try_on()` รองรับ `remixOfLookId` แล้ว เหลือแค่หน้าจอ +
    เปิดปุ่ม Remix ใน `/looks/[id]`
-3. S13/S14 แชร์ลุค (`server/api/share/` = ผู้เรียกที่ 4 ของโซนสิทธิ์พิเศษ)
-4. S10 รายละเอียดชิ้น (ค้นย้อนลุคที่มีชิ้นนี้)
+2. S13/S14 แชร์ลุค (`server/api/share/` = ผู้เรียกที่ 4 ของโซนสิทธิ์พิเศษ)
+3. S10 รายละเอียดชิ้น (ค้นย้อนลุคที่มีชิ้นนี้)
 อื่น ๆ: เชิญเพื่อนเข้า repo (`gh api -X PUT repos/VoramethP/my-twin-styles/collaborators/<user> -f permission=admin`) ·
 เลือก AI provider จริง → ADR · Web Push (VAPID) · nav bar 4 แท็บถาวร
 
