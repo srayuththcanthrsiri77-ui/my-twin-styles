@@ -249,5 +249,29 @@ URL/secret อยู่ใน Vault เพราะ repo public · หน้า�
 
 ---
 
+## [2026-09-22] Optimize & verify ตู้เสื้อผ้าก่อนไปต่อ Builder
+
+**ทำอะไร:**
+- ทวนโค้ด S08/S09 หาจุดซ้ำ/ควรปรับ: พบ `usePoseImage.ts`/`useItemImage.ts` มีลอจิก resize รูปเป็น JPEG
+  ซ้ำกันเกือบทั้งหมด → ดึงออกเป็น `resizeBitmapToJpeg()` ใน `app/utils/image.ts` ให้เรียกร่วม ·
+  พบปุ่ม filter สถานะใน `/wardrobe` เขียนซ้ำ 3 บรรทัดทั้งที่ filter ช่องข้างล่าง loop อยู่แล้ว → เปลี่ยนให้
+  loop จาก `STATUS_FILTERS` array เหมือนกัน
+- ต้องการรัน `npm run test:db` (RLS จริงบน Postgres) เพื่อยืนยัน items table แต่เครื่องนี้ไม่เคยลง Postgres
+  มาก่อน (คลัสเตอร์เดิมของเซสชันก่อนอยู่ scratchpad ที่หายไปแล้ว) — ผู้ใช้อนุญาตให้ติดตั้ง →
+  `brew install postgresql@16` แล้วสร้างคลัสเตอร์ทดสอบตามสูตรเดิมใน HANDOFF (port 55432)
+- รัน `npm run test:db` ผ่านครบ 18 ข้อ รวม RLS ของ `items` (แยกคนละ user เห็นกันไม่ได้ — ใช้ path เดียวกับ
+  `seedWardrobe()` ใน `tests/db/helpers.ts` ที่ insert เข้า `poses`+`items` ตรง ๆ ผ่าน RLS)
+
+**ทำไมถึงเลือกแบบนี้:**
+- ก่อนต่อยอดด้วย Builder (ซึ่งจะ query items ผ่าน RLS หนักขึ้น) ควรมั่นใจว่าชั้นข้อมูลของตู้เสื้อผ้าถูกต้องจริง
+  ไม่ใช่แค่ผ่าน unit test ที่ไม่แตะ Postgres จริง — RLS เป็นกฎเหล็กข้อ 4 (ADR-0006) จึงคุ้มที่จะติดตั้ง Postgres
+  แค่เพื่อ verify แม้จะไม่มีอยู่ก่อนในเครื่องนี้
+
+**ผลที่ตามมา / สิ่งที่ต้องระวังต่อไป:**
+- `postgresql@16` ติดตั้งถาวรผ่าน brew แล้ว แต่ตัวคลัสเตอร์ทดสอบ (data dir ใน scratchpad) หายทุกจบเซสชัน
+  ต้องสร้างใหม่ตามสูตรใน HANDOFF ทุกครั้ง (`export PATH=".../postgresql@16/bin:$PATH"` ก่อนด้วย)
+
+---
+
 ## งานถัดไป
 ดู `HOTCACHE.md`

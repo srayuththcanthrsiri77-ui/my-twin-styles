@@ -15,7 +15,8 @@ Mobile-first PWA (UI ไทย) — ผู้ใช้สร้าง twin จ�
   `reconcile-try-ons` active ทุก 1 นาที · Vault ตั้ง `app_site_url`/`app_cron_secret` แล้ว
 - ✅ **ล็อกอินจริงใช้ได้แล้ว** (magic link อย่างเดียว — ตัด Google OAuth ออกถาวร ซิงก์ README/ADR-0002/drawio แล้ว)
 - ✅ หน้าจอที่ทดสอบจริงผ่าน `npm run dev` แล้ว: S01 login · S04 onboarding · S02/S03 ถ่ายท่า ·
-  **S08 ตู้เสื้อผ้า + S09 เพิ่มชิ้น** (เพิ่มชิ้นได้ เห็นในตู้จริง — onboarding ② ชี้มาที่นี่แล้ว)
+  **S08 ตู้เสื้อผ้า + S09 เพิ่มชิ้น** (เพิ่มชิ้นได้ เห็นในตู้จริง — onboarding ② ชี้มาที่นี่แล้ว ·
+  `npm run test:db` ผ่านครบ 18 ข้อบน Postgres จริงด้วย — ยืนยัน RLS ของ items แยกคนละ user จริง)
 - ✅ AI adapter ที่มีแล้ว (ทุกตัวเป็น **mock** จนกว่าจะเลือก provider จริง): try-on, pose-check,
   item-processing (ลบพื้นหลัง+เดาหมวด/สี — mock จำลองว่าลบพื้นหลังไม่สำเร็จเสมอ)
 - ❌ ยังไม่มี: S11 Outfit Builder/S12 (**ทำต่อจากตรงนี้**) · S05/S06 Lookbook ตัวจริง (ตอนนี้แค่ placeholder) ·
@@ -45,6 +46,9 @@ onboarding ③ ต้องมีก่อน (Builder เติมชิ้น�
   ไม่งั้นค้าง "กำลังเข้าสู่ระบบ…" ตลอดไปเพราะไม่เคยมี session เกิดขึ้นจริง
 - เปิด .drawio ใน draw.io แล้วบันทึก **หรือรัน `draw.io -x -f png ...` export** = จัด format ใหม่ทั้งไฟล์
   (attribute reorder + dx/dy) — เทียบว่า `value=` เปลี่ยนจริงไหมก่อนสรุปว่าเนื้อหาเปลี่ยน (มักไม่เปลี่ยน แค่ noise)
+- เครื่องนี้ไม่มี Postgres มาก่อน — ติดตั้งแล้วด้วย `brew install postgresql@16` (ถาวร ไม่ต้องลงซ้ำ)
+  แต่ตัวคลัสเตอร์ทดสอบยังต้องสร้างใหม่ทุกเซสชันตามสูตรใน HANDOFF (อยู่ scratchpad → หายเมื่อจบเซสชัน) ·
+  ใช้ `export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"` ก่อนเรียก initdb/pg_ctl
 
 ---
 📜 ประวัติเต็ม: `docs/WORKLOG.md` · 📐 กฎทั้งหมด: `CLAUDE.md` · 📖 คำศัพท์: `CONTEXT.md`
