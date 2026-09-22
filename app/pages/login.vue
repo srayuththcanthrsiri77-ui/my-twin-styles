@@ -6,10 +6,6 @@ const email = ref('')
 const sending = ref(false)
 const redirectTo = computed(() => `${useRuntimeConfig().public.siteUrl}/auth/confirm`)
 
-async function withGoogle() {
-  const { error } = await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: redirectTo.value } })
-  if (error) toast.add({ title: 'เข้าสู่ระบบไม่สำเร็จ', description: error.message, color: 'error' })
-}
 
 async function withMagicLink() {
   sending.value = true
@@ -30,8 +26,6 @@ async function withMagicLink() {
         ลองชุดบนตัวคุณ ก่อนแต่งจริง
       </p>
     </div>
-    <UButton label="ดำเนินการต่อด้วย Google" icon="i-simple-icons-google" variant="outline" block @click="withGoogle" />
-    <USeparator label="หรือ" />
     <form class="flex flex-col gap-2" @submit.prevent="withMagicLink">
       <UInput v-model="email" type="email" placeholder="อีเมล" required />
       <UButton type="submit" label="ส่งลิงก์เข้าสู่ระบบ" :loading="sending" block />

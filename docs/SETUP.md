@@ -5,7 +5,7 @@
 ## 1. Supabase project
 
 1. สร้าง project ที่ region **Southeast Asia (Singapore) — ap-southeast-1** (ต้องตรงกับ Vercel `sin1` · FDR-0004)
-2. Authentication → Providers → เปิด **Google** (ใส่ OAuth client จาก Google Cloud) และ **Email** (magic link)
+2. Authentication → Providers → เปิด **Email** (สำหรับ magic link)
 3. Authentication → URL Configuration → Site URL = URL ของแอป · Redirect URLs เพิ่ม `<site>/auth/confirm` และ `http://localhost:3000/auth/confirm`
 4. คัดลอกค่าใส่ `.env` ตาม `.env.example`:
    - `SUPABASE_URL`, `SUPABASE_KEY` (publishable key)
