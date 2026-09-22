@@ -180,5 +180,27 @@ URL/secret อยู่ใน Vault เพราะ repo public · หน้า�
 
 ---
 
+## [2026-09-22] Commit งานค้าง auth ที่ไม่ได้ปิดไว้จากเซสชันก่อน + ซิงก์เอกสาร
+
+**ทำอะไร:**
+- เปิดเซสชันใหม่พบว่ามี `.env` จริงแล้ว (ผู้ใช้ต่อ Supabase เสร็จ) และมีงานแก้ไขค้างอยู่ที่ยังไม่ commit จากรอบก่อน:
+  ตัดปุ่ม Google OAuth ออกจากหน้า login, เพิ่มการจัดการ error ลิงก์หมดอายุที่ `/auth/confirm`,
+  จำกัด `accept` ของ input รูปท่าเป็น jpeg/png/webp, ปรับถ้อยคำ CLAUDE.md — commit แยกเป็น 3 ก้อนตามหัวข้อ
+- ถามผู้ใช้ว่าเลิกใช้ Google OAuth ถาวรหรือชั่วคราว → **ถาวร** → ตามไปแก้ `docs/design/README.md`,
+  wireframe S01 ในหน้า Sitemap/Onboarding/Wireframes/Architecture ของ `.drawio`, และ ADR-0002 ให้ตรงกับโค้ด
+  (แก้เฉพาะ cell ที่เกี่ยวข้อง ไม่ regenerate ทั้งไฟล์ · ตรวจด้วยการ export PNG หน้า Wireframes)
+- **เจอ:** local git config ของ repo ไม่มี `user.email` ตั้งไว้ ทำให้ commit แรกหลุดไปใช้อีเมลเครื่อง
+  (ไม่ใช่ noreply) — ตั้ง `git config --local user.email/user.name` เป็นค่า noreply ที่ใช้มาตลอด แล้ว amend commit แรกแก้ author
+
+**ทำไมถึงเลือกแบบนี้:** งานค้างเช็คแล้วผ่าน `npm run check` และไม่มี error ต่อกัน จึง commit ได้เลยแทนที่จะ
+ทิ้งไว้ต่อ · เอกสารออกแบบต้องตรงกับสิ่งที่ auth จริงรองรับ ไม่งั้นแชตหน้าจะอ่าน wireframe แล้วเข้าใจผิดว่ามี Google
+
+**ผลที่ตามมา / สิ่งที่ต้องระวังต่อไป:**
+- repo นี้ต้องมี local `git config user.email` ตั้งไว้เสมอ ห้ามปล่อยให้ fallback ไป global — เช็คด้วย
+  `git config user.email` ก่อน commit ถ้าไม่ใช่ `...@users.noreply.github.com` ให้ตั้งก่อน
+- ยังไม่ได้ตรวจว่า `npm run db:migrate` รันกับ Supabase จริงหรือยัง (มี `.env` แล้วแต่ยังไม่ได้ทดสอบ dev/login จริง)
+
+---
+
 ## งานถัดไป
 ดู `HOTCACHE.md`
