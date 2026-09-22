@@ -313,5 +313,47 @@ URL/secret อยู่ใน Vault เพราะ repo public · หน้า�
 
 ---
 
+## [2026-09-23] S05 Lookbook + S06 รายละเอียดลุค
+
+**ทำอะไร:**
+- API ใหม่ทั้งหมดผ่าน `withUserDb` ไม่มี migration ใหม่ (ตาราง/RLS/column grant มีอยู่แล้วจาก data model):
+  `GET /api/looks` (การลองที่ค้างอยู่ queued/running + ลุคที่สำเร็จเรียงใหม่สุดก่อน พร้อม occasionIds ต่อลุค),
+  `GET/POST /api/occasions` (ระบบ `user_id null` + ของผู้ใช้เอง), `GET /api/looks/[id]` (รายละเอียด: รูป ·
+  ชิ้นที่ใช้ทุกช่องรวม accessory ที่แนบดูคู่ · โอกาส · dislike reason), `PATCH /api/looks/[id]`
+  (แก้ได้แค่ is_favorite/note ตาม column grant), `PUT /api/looks/[id]/occasions` (แทนที่ทั้งชุด),
+  `POST /api/looks/[id]/dislike` (upsert ผ่าน onConflictDoUpdate — กดซ้ำ = แก้เหตุผล)
+- `shared/look.ts`: `DISLIKE_REASONS`/`DISLIKE_REASON_LABEL` + zod schema ของทั้ง 4 endpoint ที่รับ body
+- หน้า `/` เขียนใหม่เป็น S05 จริง (เดิมเป็น placeholder ว่างเสมอ): skeleton โหลด · empty state ·
+  การ์ดการลองที่ค้างอยู่ด้านบน · filter โอกาส (chip) + ⭐ · grid 2 คอลัมน์ลิงก์ไปหน้า S06
+- หน้าใหม่ `/looks/[id]` (S06): รูปลุค + ปุ่ม ⭐ ทับมุมขวาบน · แถบชิ้นที่ใช้ (แสดง "ชิ้นถูกลบแล้ว" ถ้า
+  item_id เป็น null จาก FK set null) · chip โอกาสกดสลับได้ทันที + ช่องตั้งเอง · โน้ตแก้แล้วต้องกดบันทึกเอง
+  (กันยิง API ทุกตัวอักษร) · ปุ่ม Remix/แชร์ปิดไว้ "เร็ว ๆ นี้" (ui-decision ใช้ `UBadge`/`disabled` แบบ
+  onboarding.vue) · 👎 เปิด `UDrawer` เลือกเหตุผล
+- unit test `tests/look.test.ts` ครอบ schema ทั้งหมดใน `shared/look.ts`
+
+**ทำไมถึงเลือกแบบนี้:**
+- ไม่ทำ endpoint ลบลุค — wireframe S06 ไม่มีปุ่มลบ (มีแค่ Remix/👎/แชร์) จึงไม่ทำเผื่อ ลดความซับซ้อนเรื่อง
+  ลบไฟล์จริงใน bucket `looks` (กฎเหล็กข้อ 1) ไว้ตอนทำ S15 "ลบ twin/ข้อมูลทั้งหมด" ทีเดียว
+- Remix/แชร์ยังเป็นปุ่ม disabled ไม่ใช่ของจริงบางส่วน — แม้ `outfitSchema`/`start_try_on()` รองรับ
+  `remixOfLookId` อยู่แล้ว แต่ S07 ต้องมีหน้าจอเทียบคู่ลุคต้นทาง-ลุคใหม่ตาม wireframe ซึ่งเป็นงานแยก
+  ทำครึ่ง ๆ กลางทางแล้วปล่อยไว้จะสับสนกว่าไม่ทำเลย
+- โอกาส (occasion) กดที่ chip แล้วอัปเดตทันทีผ่าน `PUT .../occasions` (ไม่ต้องกด "บันทึก" แยก) เพราะ
+  เป็นการสลับเปิด/ปิดไม่กี่ตัว ต่างจากโน้ตที่เป็นข้อความยาวควรกดยืนยันเอง
+
+**ผลที่ตามมา / สิ่งที่ต้องระวังต่อไป:**
+- ยัง verify ผ่านเบราว์เซอร์แบบล็อกอินจริงไม่ได้ในเซสชันนี้ — โปรเจกต์ต่อ Supabase จริงแล้วและ magic link
+  ต้องกดในเบราว์เซอร์เดียวกับที่ขอ (browser pane เข้า `supabase.co` ตรงไม่ได้ตามที่เจอไว้ตอนทำ Builder)
+  ตรวจแค่ `npm run check` ผ่าน (typecheck + unit 42) และยิง curl ตรงไปที่ route ใหม่ทั้งหมดยืนยันว่า
+  register ถูกต้องและตกไปที่ `requireUser` (401) โดยไม่ error กลางทาง — ผู้ใช้ควรลองจริงผ่าน `npm run dev`
+  อีกที · ระหว่าง verify เจอว่ามีอีก session รัน `npm run dev` ค้างอยู่ที่ port 3000 อยู่แล้ว จึงเพิ่ม config
+  ชั่วคราวใน `.claude/launch.json` ให้รันที่ 3001 แทน (`npm run dev -- --port 3001`) แล้วเอาออกหลัง verify
+  เสร็จ — ไม่กระทบ session เดิม
+- `look_occasions` insert ไม่เช็กว่า `occasionId` เป็นของระบบหรือของผู้ใช้เองจริง (พึ่ง RLS ของ
+  `look_occasions` ที่เช็กแค่ความเป็นเจ้าของ "ลุค" ไม่เช็กความเป็นเจ้าของ "โอกาส") — ผลกระทบต่ำเพราะ
+  ผู้ใช้ต้องรู้ uuid ของโอกาสคนอื่นก่อนถึงจะลองอ้างได้ และผลคือแค่แท็กลุคตัวเองด้วยโอกาสที่มองไม่เห็นชื่อ
+- nav bar 4 แท็บถาวรยังไม่ทำ — จาก `/looks/[id]` กลับ `/` ด้วยปุ่มลูกศรเท่านั้น
+
+---
+
 ## งานถัดไป
 ดู `HOTCACHE.md`
