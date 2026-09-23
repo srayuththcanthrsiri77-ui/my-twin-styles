@@ -1,5 +1,5 @@
 import { and, eq } from 'drizzle-orm'
-import { items, lookDislikes, lookOccasions, looks, tryOnItems } from '../../db/schema'
+import { items, lookDislikes, lookOccasions, looks, tryOnItems, tryOns } from '../../db/schema'
 import { withUserDb } from '../../utils/db'
 import { userStorageSigner } from '../../utils/storage'
 
@@ -10,7 +10,10 @@ export default defineEventHandler(async (event) => {
   const sign = await userStorageSigner(event)
 
   return withUserDb(event, async (tx, userId) => {
-    const [look] = await tx.select().from(looks).where(and(eq(looks.id, id), eq(looks.userId, userId)))
+    const [look] = await tx.select({
+      id: looks.id, tryOnId: looks.tryOnId, imagePath: looks.imagePath, isFavorite: looks.isFavorite,
+      note: looks.note, createdAt: looks.createdAt, poseId: tryOns.poseId, remixOfLookId: tryOns.remixOfLookId,
+    }).from(looks).innerJoin(tryOns, eq(tryOns.id, looks.tryOnId)).where(and(eq(looks.id, id), eq(looks.userId, userId)))
     if (!look) throw createError({ statusCode: 404, statusMessage: 'look_not_found' })
 
     const [usedItems, occasionRows, [dislike]] = await Promise.all([
@@ -42,6 +45,8 @@ export default defineEventHandler(async (event) => {
       isFavorite: look.isFavorite,
       note: look.note,
       createdAt: look.createdAt,
+      poseId: look.poseId,
+      remixOfLookId: look.remixOfLookId,
       occasionIds: occasionRows.map(o => o.occasionId),
       dislikeReason: dislike?.reason ?? null,
       items: itemsWithUrls,

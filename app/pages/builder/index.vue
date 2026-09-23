@@ -6,14 +6,18 @@ import { MAX_ACCESSORIES, outfitSchema, RENDER_SLOTS, SLOT_LABEL, type RenderSlo
 const route = useRoute()
 const toast = useToast()
 const fromOnboarding = route.query.from === 'onboarding'
-const doneTo = fromOnboarding ? '/onboarding' : '/'
+// S07: มาจากปุ่ม Remix ใน /looks/[id] — เติมท่า+ชิ้นเดิมให้ แล้วอ้างถึงลุคต้นทางตอนส่ง (CONTEXT.md)
+const remixOfLookId = route.query.remixOf as string | undefined
+const doneTo = fromOnboarding ? '/onboarding' : remixOfLookId ? `/looks/${remixOfLookId}` : '/'
 
-// ยิงสามคำขอพร้อมกันแทนการรอทีละอัน (await ...; await ...; await ... = ต่อคิว ช้ากว่า Promise.all)
-const [{ data: poses }, { data: allItems }, { data: quota, refresh: refreshQuota }] = await Promise.all([
+// ยิงคำขอพร้อมกันแทนการรอทีละอัน (await ...; await ...; await ... = ต่อคิว ช้ากว่า Promise.all)
+const [{ data: poses }, { data: allItems }, { data: quota, refresh: refreshQuota }, remixSourceRes] = await Promise.all([
   useFetch('/api/poses'),
   useFetch('/api/items'),
   useFetch('/api/me/quota'),
+  remixOfLookId ? useFetch(`/api/looks/${remixOfLookId}`) : Promise.resolve(null),
 ])
+const remixSource = remixSourceRes?.data.value
 
 const selectedPoseId = ref<string>()
 const slotSelection = reactive<Record<RenderSlot, string | null>>({ top: null, bottom: null, outer: null, dress: null })
@@ -35,6 +39,16 @@ let initialized = false
 watchEffect(() => {
   if (initialized || !poses.value) return
   initialized = true
+  // Remix: เติมท่า + ทุกช่องจากลุคต้นทาง — ชิ้นที่ถูกลบไปแล้ว (id เป็น null) ปล่อยช่องว่างให้เลือกใหม่
+  if (remixSource) {
+    selectedPoseId.value = remixSource.poseId ?? poses.value[0]?.id
+    for (const it of remixSource.items) {
+      if (!it.id) continue
+      if (it.slot === 'accessory') accessoryIds.value.push(it.id)
+      else slotSelection[it.slot] = it.id
+    }
+    return
+  }
   selectedPoseId.value = poses.value[0]?.id
   if (prefillId && prefillSlot) {
     applySelection(prefillSlot, prefillId)
@@ -56,7 +70,11 @@ const outfitItems = computed(() => {
   for (const id of accessoryIds.value) items.push({ slot: 'accessory', itemId: id })
   return items
 })
-const validation = computed(() => outfitSchema.safeParse({ poseId: selectedPoseId.value, items: outfitItems.value }))
+const validation = computed(() => outfitSchema.safeParse({
+  poseId: selectedPoseId.value,
+  items: outfitItems.value,
+  remixOfLookId,
+}))
 const canSubmit = computed(() => validation.value.success && (quota.value?.remaining ?? 0) > 0 && !submitting.value)
 
 // S12: เลือกชิ้นใส่ช่อง — accessory เลือกได้หลายชิ้น ที่เหลือเลือกแล้วปิด sheet ทันที
@@ -113,9 +131,13 @@ async function submit() {
     <header class="flex items-center gap-2">
       <UButton :to="doneTo" icon="i-lucide-x" variant="ghost" color="neutral" aria-label="ปิด" />
       <h1 class="text-lg font-bold">
-        ลองชุด
+        {{ remixOfLookId ? 'Remix' : 'ลองชุด' }}
       </h1>
     </header>
+
+    <p v-if="remixOfLookId && !submitted" class="-mt-2 text-xs text-muted">
+      แก้ท่าหรือชิ้นแล้วลองใหม่ — ลุคเดิมยังอยู่เหมือนเดิม ไม่ถูกแก้
+    </p>
 
     <template v-if="submitted">
       <div class="mt-auto flex flex-1 flex-col items-center justify-center gap-3 text-center">
@@ -124,7 +146,7 @@ async function submit() {
           ส่งลองชุดแล้ว
         </p>
         <p class="text-sm text-muted">
-          กำลังให้ AI ลองชุดอยู่ — ออกไปทำอย่างอื่นก่อนได้ ผลจะอยู่ใน Lookbook
+          {{ remixOfLookId ? 'ลุคใหม่จะอยู่ใน Lookbook — เปิดดูแล้วกดเทียบกับลุคเดิมได้เลย' : 'กำลังให้ AI ลองชุดอยู่ — ออกไปทำอย่างอื่นก่อนได้ ผลจะอยู่ใน Lookbook' }}
         </p>
       </div>
       <div class="mt-auto flex flex-col gap-3">

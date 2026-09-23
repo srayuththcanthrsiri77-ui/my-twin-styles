@@ -178,16 +178,22 @@ async function submitDislike(reason: typeof DISLIKE_REASONS[number]) {
       <UButton v-if="noteDirty" label="บันทึกโน้ต" size="sm" variant="outline" :loading="savingNote" @click="saveNote" />
     </section>
 
-    <!-- Remix / แชร์ — ยังไม่เปิดใช้ (S07/S13 ยังไม่ทำ) -->
+    <!-- Remix เปิดใช้แล้ว (S07) · แชร์ยังไม่ทำ (S13) -->
     <div class="flex flex-col gap-1">
       <div class="flex gap-2">
-        <UButton label="Remix" icon="i-lucide-shuffle" variant="outline" color="neutral" disabled class="flex-1" />
+        <UButton :to="`/builder?remixOf=${look.id}`" label="Remix" icon="i-lucide-shuffle" variant="outline" color="neutral" class="flex-1" />
         <UButton label="แชร์" icon="i-lucide-share-2" variant="outline" color="neutral" disabled class="flex-1" />
       </div>
       <p class="text-center text-xs text-dimmed">
-        Remix และแชร์ — เร็ว ๆ นี้
+        แชร์ — เร็ว ๆ นี้
       </p>
     </div>
+
+    <!-- ลุคนี้เองเป็นผลจาก Remix — โยงกลับไปเทียบกับลุคต้นทาง (S07) -->
+    <UButton
+      v-if="look.remixOfLookId" :to="`/remix/${look.id}`" label="ดูเทียบกับลุคเดิม"
+      icon="i-lucide-columns-2" variant="soft" block
+    />
 
     <UButton
       v-if="!look.dislikeReason" label="👎 ไม่ถูกใจ" variant="ghost" color="neutral" size="sm"

@@ -11,6 +11,15 @@ export async function userStorageSigner(event: H3Event) {
   }
 }
 
+// ลบไฟล์ในนามผู้ใช้ — ใช้ตอนลบลุค (ADR-0003: ลบแล้วต้องลบไฟล์จริง) storage RLS อนุญาตแค่โฟลเดอร์ตัวเอง
+export async function removeUserStorage(event: H3Event) {
+  const storage = (await serverSupabaseClient(event)).storage
+  return async (bucket: 'poses' | 'items' | 'looks', path: string) => {
+    const { error } = await storage.from(bucket).remove([path])
+    if (error) throw error
+  }
+}
+
 // path ต้องอยู่ในโฟลเดอร์ของผู้ใช้เสมอ (<user_id>/…) — กันผู้ใช้อ้าง path ของคนอื่น
 export function assertOwnPath(userId: string, path: string) {
   if (!path.startsWith(`${userId}/`) || path.includes('..')) {
