@@ -473,5 +473,51 @@ provider settings) จนสำเร็จ ("Successfully updated settings")
 
 ---
 
+## [2026-09-23] S07 Remix เทียบคู่
+
+**ทำอะไร:**
+อ่าน wireframe จริงจาก drawio หน้า "4 Flow: ลองชุด" และ "6 Wireframes" (export PNG ดู ไม่เดาจาก README
+อย่างเดียว) ก่อนเริ่ม — พบว่า flow คือ: S06 กด Remix → พาไป Builder (S11) เติมท่า+ชุดเดิมให้ → ผู้ใช้แก้
+ตรงไหนก็ได้แล้วส่ง → รอผล async ตามปกติ → ลุคใหม่โผล่ที่ Lookbook → เปิดดูแล้วมีทางไป S07 เทียบกับลุคเดิม
+(ไม่ใช่ redirect อัตโนมัติทันทีหลังส่ง เพราะ try-on เป็น background job — ไม่มีอะไรให้เทียบจนกว่าจะเสร็จ)
+
+เปลี่ยนแปลง:
+- `server/api/looks/[id].get.ts`: เพิ่ม `poseId`/`remixOfLookId` ในผลลัพธ์ (join `tryOns`) — Builder ใช้
+  `poseId`+`items` เติมชุดเดิม ส่วน `remixOfLookId` บอก S06 ว่าลุคนี้เองเป็นผลจาก remix หรือเปล่า
+- `server/api/looks/[id]/compare.get.ts` ใหม่: หาลุคต้นทางจาก `tryOns.remixOfLookId` ของลุคที่ส่งมา แล้ว
+  คำนวณ diff ด้วย `diffOutfits()` (`shared/look.ts`) — เทียบทีละ `RENDER_SLOT` + สรุปส่วนประกอบเป็นจำนวน
+- `server/api/looks/[id].delete.ts` + `removeUserStorage()` ใหม่ใน `server/utils/storage.ts`: ลบไฟล์ใน
+  bucket `looks` ก่อน (คนละ request จาก DB delete กันถือ transaction เปิดค้างระหว่างรอ network) แล้วค่อย
+  ลบแถว — endpoint นี้เป็นทางลบลุคทางเดียวในระบบตอนนี้ (S06 เองไม่มีปุ่มลบตามที่ wireframe ไม่ได้ระบุไว้)
+- `app/pages/builder/index.vue`: อ่าน query `remixOf` → ดึงลุคต้นทางมาเติม pose + slotSelection +
+  accessoryIds (ชิ้นที่ถูกลบไปแล้ว id เป็น null ก็แค่ปล่อยช่องว่าง ไม่ error) · validation ส่ง
+  `remixOfLookId` ต่อให้ `start_try_on()` (`shared/outfit.ts` รองรับอยู่แล้วตั้งแต่ตั้งสแต็ก ไม่ต้องแก้ backend)
+- `app/pages/looks/[id].vue`: เปิดปุ่ม Remix (ลิงก์ไป `/builder?remixOf=`) · เพิ่มปุ่ม "ดูเทียบกับลุคเดิม"
+  ถ้า `remixOfLookId` ไม่ null
+- `app/pages/remix/[id].vue` ใหม่ (S07): รูปคู่ + รายการที่เปลี่ยน + เก็บทั้งคู่/ลบลุคใหม่/Remix ต่อ
+
+**ทำไมถึงเลือกแบบนี้:**
+- หน้า S07 ใช้ path `/remix/[id]` แยกจาก `/looks/[id]/*` แม้จะดูเข้าธีมกว่า เพราะ Nuxt file-based routing
+  จะตีความ `pages/looks/[id]/compare.vue` คู่กับ `pages/looks/[id].vue` เป็น parent/child (ต้องมี
+  `<NuxtPage/>` ใน parent ถึงจะ render child ได้) ซึ่งไม่ใช่ความสัมพันธ์ที่ต้องการที่นี่ (สองหน้าเป็นคนละ
+  route อิสระ ไม่ใช่ layout ซ้อนกัน) เลือก top-level route ใหม่แทนตัดปัญหาความกำกวมนี้ไปเลย
+- ลบไฟล์ storage แยก request จากลบแถว DB (ไม่ทำในทรานแซกชันเดียวกับ query อื่น) เพราะไม่อยากถือ
+  Postgres transaction เปิดค้างระหว่างรอ network call ไป Supabase Storage — เพิ่งแก้เรื่อง connection
+  pool ไปเมื่อกี้ ไม่อยากเปิดช่องให้ transaction ค้างนานอีกทางหนึ่ง
+- ไม่เพิ่มปุ่มลบทั่วไปใน S06 — wireframe มีแค่ ⭐/แชร์/Remix/👎 การลบมีแค่ทางเดียวคือ "ลบลุคใหม่" ใน S07
+  ตอนยกเลิก remix ที่เพิ่งทำ ถ้าจะทำ "ลบลุคทั่วไป" ค่อยทำตอน S15 ลบข้อมูลทั้งหมด
+
+**ผลที่ตามมา / สิ่งที่ต้องระวังต่อไป:**
+- ยัง verify ผ่านล็อกอินจริงไม่ได้เหมือนเดิม (ข้อจำกัดเดียวกับทุกครั้งที่ผ่านมา) — ตรวจแค่ typecheck +
+  unit 47 + `test:db` 18 ข้อ + curl เช็ก route ใหม่ทั้งหมดไม่ error กลางทาง
+- `diffOutfits` เทียบแค่ "ชิ้นในช่องเปลี่ยนไหม" ไม่ได้เทียบว่า "ท่าเปลี่ยนไหม" (CONTEXT.md บอก remix
+  เปลี่ยนได้ทั้งชิ้นหรือท่า) — ถ้า remix แค่เปลี่ยนท่าอย่างเดียวไม่เปลี่ยนชิ้นเลย หน้า compare จะไม่มี
+  "เปลี่ยน" ให้โชว์เลย (แค่ section ว่าง ไม่ error) เป็นข้อจำกัดที่รู้ตัวแล้ว ยังไม่ได้แก้เพราะ scope MVP
+  เน้นกรณีเปลี่ยนชิ้นเป็นหลัก
+- Remix ต่อกันได้ไม่จำกัดชั้น (remix ของ remix ของ remix ...) เพราะ `remixOfLookId` ชี้แค่ชั้นเดียวขึ้นไป
+  ไม่มี validation จำกัดความลึก — ยังไม่เจอปัญหาจริงเพราะเป็นแอปเล็กให้เพื่อนใช้
+
+---
+
 ## งานถัดไป
 ดู `HOTCACHE.md`
