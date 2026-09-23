@@ -13,11 +13,6 @@ export default defineEventHandler(async (event) => {
     if (err instanceof InvalidWebhookSignature) throw createError({ statusCode: 401, statusMessage: 'invalid_signature' })
     throw err
   }
-  const { db, close } = openPrivilegedDb(event)
-  try {
-    return await handleResult(privilegedLifecycleDeps(event, db), result)
-  }
-  finally {
-    await close()
-  }
+  const db = openPrivilegedDb(event)
+  return await handleResult(privilegedLifecycleDeps(event, db), result)
 })

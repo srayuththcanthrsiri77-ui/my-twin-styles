@@ -8,7 +8,7 @@ import { openDb, type Db } from './db'
 import { getTryOnAdapter } from './try-on'
 import type { PrivilegedDeps } from './try-on/lifecycle'
 
-// Drizzle ในฐานะเจ้าของตาราง (ข้าม RLS) — ปิดด้วย close() ทุกครั้ง
+// Drizzle ในฐานะเจ้าของตาราง (ข้าม RLS) — ใช้ connection pool เดียวกับ withUserDb (server/utils/db.ts)
 export function openPrivilegedDb(event: H3Event) {
   return openDb(event)
 }

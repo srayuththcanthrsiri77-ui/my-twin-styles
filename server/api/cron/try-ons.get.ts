@@ -10,11 +10,6 @@ export default defineEventHandler(async (event) => {
   if (!secret || got.length !== want.length || !timingSafeEqual(got, want)) {
     throw createError({ statusCode: 401, statusMessage: 'unauthorized' })
   }
-  const { db, close } = openPrivilegedDb(event)
-  try {
-    return { reconciled: await reconcileStuck(privilegedLifecycleDeps(event, db)) }
-  }
-  finally {
-    await close()
-  }
+  const db = openPrivilegedDb(event)
+  return { reconciled: await reconcileStuck(privilegedLifecycleDeps(event, db)) }
 })
