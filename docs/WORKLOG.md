@@ -397,5 +397,42 @@ await useFetch(y)` ต่อกันหลายบรรทัด ซึ่ง
 
 ---
 
+## [2026-09-23] แก้ตัวการหลักของหน้าโหลดช้า — เปลี่ยน DB connection เป็น pool ระดับ process
+
+**ทำอะไร:**
+ผู้ใช้บอกว่ายังช้าอยู่ ~4 วิ แม้แก้ `useFetch` เรียงคิวไปแล้ว — เข้าถึงล็อกอินจริงของผู้ใช้ไม่ได้ (magic link
+ต้องกดในเบราว์เซอร์เดียวกับที่ขอ) เลยเขียนสคริปต์ node เล็ก ๆ ต่อ `NUXT_DATABASE_URL`/`SUPABASE_URL` จริง
+ตรงจากเครื่อง dev วัดเวลา "เปิด connection ใหม่ + query แรก" 3 รอบ ได้ 636ms / 729ms / **2253ms** และ
+วัด raw network RTT ไป Supabase Auth ได้ 1456ms / 1122ms / 92ms (รอบหลังเร็วเพราะ TLS session resume) —
+สรุปว่า `openDb()` เปิด `postgres(url, {max:1})` ใหม่ทุก request (ตาม ADR-0006 เดิม) คือสาเหตุหลัก ไม่ใช่
+`useFetch` เรียงคิวอย่างเดียว
+เปลี่ยน `server/utils/db.ts` ให้เก็บ `postgres()` client (`max: 10`) ไว้ที่ module scope สร้างครั้งแรกที่
+ต้องใช้แล้ว reuse ตลอดอายุ process แทน · เจอบั๊กเดียวกัน (await sign() ทีละ property) ซ้ำใน
+`server/api/looks/[id].get.ts` เลยแก้ไปด้วย (เซ็นรูปลุค+ชิ้นพร้อมกัน) · ปรับ `server/api/webhooks/try-on.post.ts`
+กับ `server/api/cron/try-ons.get.ts` ที่เคยเรียก `close()` เองให้ตรงกับ signature ใหม่ (ไม่ต้อง close อีกต่อไป
+เพราะ pool อยู่ยาวทั้ง process) · เพิ่มส่วน "แก้ไขเพิ่มเติม" ใน ADR-0006 อธิบายเหตุผลทั้งหมด แทนที่จะแก้เนื้อหา
+เดิมทับ (ADR ไม่ใช่ append-only แบบ WORKLOG แต่ก็ไม่ควรลบประวัติการตัดสินใจเดิมทิ้ง)
+
+**ทำไมถึงเลือกแบบนี้:**
+- `set local role`/`set_config` ที่ใช้ตั้ง RLS claims อยู่ในขอบเขต transaction เดียวเท่านั้น ปลอดภัยที่จะ
+  reuse pool ข้าม request เพราะแต่ละ transaction ยืม connection คนละตัวจาก pool เสมอ ไม่มีทางเห็นค่ากัน
+- รูปแบบนี้ (shared pool + `sql.begin()`/`db.transaction()` ต่อ request) ถูกใช้อยู่แล้วใน
+  `tests/db/helpers.ts` (`asUser`/`asAnon`) มาตั้งแต่ตั้งสแต็ก และเทส RLS ผ่านมาตลอด — ยืนยันว่า pattern
+  นี้ถูกต้อง ไม่ใช่ของใหม่ที่ไม่เคยพิสูจน์
+- ไม่แก้เป็น `getDb(workspaceId)` หรือ pool ขนาดใหญ่ผิดปกติ — แอปนี้ฐานเดียว ผู้ใช้น้อย `max: 10` ต่อ
+  process เพียงพอและไม่เสี่ยงชนเพดาน connection ของ Supabase
+
+**ผลที่ตามมา / สิ่งที่ต้องระวังต่อไป:**
+- ยืนยัน `npm run check` ผ่าน (typecheck + unit 42) และ `npm run test:db` ผ่านครบ 18 ข้อบน Postgres จริง
+  (สร้าง cluster ทดสอบที่ port 55433 แยกจาก session อื่นที่ใช้ port 55432 ค้างอยู่พอดี)
+- **ยังไม่ได้ยืนยันจากผู้ใช้จริงว่าหลังแก้นี้เร็วขึ้นแค่ไหน** — รอ feedback รอบถัดไป
+- เหลือ timing log ชั่วคราว (`console.log('[timing] ...')` มาร์ก `TODO(perf-debug)`) ใน
+  `server/utils/auth.ts` (auth.getUser) และ `server/utils/storage.ts` (createSignedUrl) ไว้เผื่อยังช้าอยู่
+  ต้องดูว่าเวลาไปกองที่ auth หรือ signing แทน — ถ้าผู้ใช้ยืนยันว่าเร็วพอแล้วให้ลบ log พวกนี้ทิ้ง
+- ถ้า deploy ขึ้น Vercel จริงต้องคิดเรื่องจำนวน connection รวมตอนมีหลาย serverless instance พร้อมกัน
+  (`max: 10` ต่อ instance) — ตอนนี้ยังเป็นแอปให้เพื่อนใช้ ขนาดเล็ก ไม่รีบ
+
+---
+
 ## งานถัดไป
 ดู `HOTCACHE.md`
