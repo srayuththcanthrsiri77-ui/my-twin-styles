@@ -46,8 +46,8 @@ export function outfitJson(w: { topId: string, bottomId: string }) {
   return JSON.stringify([{ slot: 'top', item_id: w.topId }, { slot: 'bottom', item_id: w.bottomId }])
 }
 
-export function startTryOn(uid: string, w: { poseId: string, topId: string, bottomId: string }) {
-  return asUser(uid, async tx => (await tx`select public.start_try_on(${w.poseId}, ${outfitJson(w)}::text::jsonb) as id`)[0]!.id as string)
+export function startTryOn(uid: string, w: { poseId: string, topId: string, bottomId: string }, remixOf?: string) {
+  return asUser(uid, async tx => (await tx`select public.start_try_on(${w.poseId}, ${outfitJson(w)}::text::jsonb, ${remixOf ?? null}) as id`)[0]!.id as string)
 }
 
 // เพดานรวมเป็นของทั้งระบบ — ตั้งให้เหลือพอสำหรับเทสต์แล้วคืนค่าเดิม
