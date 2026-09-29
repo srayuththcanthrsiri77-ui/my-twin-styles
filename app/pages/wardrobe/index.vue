@@ -25,7 +25,11 @@ const filtered = computed(() => (allItems.value ?? []).filter(i =>
       <h1 class="text-xl font-bold">
         ตู้เสื้อผ้า
       </h1>
-      <UButton to="/wardrobe/new" icon="i-lucide-plus" aria-label="เพิ่มชิ้น" />
+      <div class="flex gap-2">
+        <UButton to="/wardrobe/new" icon="i-lucide-plus" aria-label="เพิ่มชิ้น" />
+        <UButton to="/" icon="i-lucide-image" variant="ghost" color="neutral" aria-label="ลุค" />
+        <UButton to="/profile" icon="i-lucide-user" variant="ghost" color="neutral" aria-label="โปรไฟล์" />
+      </div>
     </header>
 
     <!-- โครงกำลังโหลด -->

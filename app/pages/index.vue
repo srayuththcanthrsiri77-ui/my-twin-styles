@@ -32,7 +32,12 @@ const isEmpty = computed(() => !data.value?.pending.length && !data.value?.looks
       <h1 class="text-xl font-bold">
         ลุคของฉัน
       </h1>
-      <UButton to="/builder" icon="i-lucide-plus" aria-label="ลองชุด" />
+      <div class="flex gap-2">
+        <UButton to="/builder" icon="i-lucide-plus" aria-label="ลองชุด" />
+        <!-- ยังไม่มีแถบเมนูล่าง 4 ปุ่มถาวร (S17 ค้างอยู่) — ใส่ทางลัดไปตู้เสื้อผ้า/โปรไฟล์ไว้ก่อนกันหาไม่เจอ -->
+        <UButton to="/wardrobe" icon="i-lucide-shirt" variant="ghost" color="neutral" aria-label="ตู้เสื้อผ้า" />
+        <UButton to="/profile" icon="i-lucide-user" variant="ghost" color="neutral" aria-label="โปรไฟล์" />
+      </div>
     </header>
 
     <!-- โครงกำลังโหลด -->

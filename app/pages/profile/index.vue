@@ -83,10 +83,14 @@ async function confirmDeleteAll() {
 
 <template>
   <main class="mx-auto flex min-h-dvh max-w-md flex-col gap-4 p-4 pb-8">
-    <header class="pt-2">
+    <header class="flex items-center justify-between pt-2">
       <h1 class="text-xl font-bold">
         โปรไฟล์
       </h1>
+      <div class="flex gap-2">
+        <UButton to="/" icon="i-lucide-image" variant="ghost" color="neutral" aria-label="ลุค" />
+        <UButton to="/wardrobe" icon="i-lucide-shirt" variant="ghost" color="neutral" aria-label="ตู้เสื้อผ้า" />
+      </div>
     </header>
 
     <div class="flex items-center gap-3">
