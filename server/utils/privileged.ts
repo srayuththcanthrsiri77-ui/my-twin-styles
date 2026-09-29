@@ -1,12 +1,20 @@
 // ⚠️ โซนสิทธิ์พิเศษ (ADR-0005) — ที่เดียวในระบบที่อ่าน secret key ได้
-// ผู้เรียกที่อนุญาต: server/api/webhooks/** · server/api/cron/** · server/api/share/** · server/utils/push.ts
-// route ที่มี session ผู้ใช้ห้าม import ไฟล์นี้ (tests/privileged-imports.test.ts ตรวจอยู่)
-// user_id ต้องมาจากแถว try_ons ในฐานข้อมูลเสมอ — ห้ามเชื่อ payload ภายนอก
+// ผู้เรียกที่อนุญาต: server/api/webhooks/** · server/api/cron/** · server/api/share/** · server/utils/push.ts ·
+// server/api/me/delete.post.ts (ผู้เรียกที่ 5 — ดูเหตุผลที่ท้าย ADR-0005)
+// route ที่มี session ผู้ใช้ห้าม import ไฟล์นี้ ยกเว้น 1 จุดที่ระบุไว้ข้างต้น (tests/privileged-imports.test.ts ตรวจอยู่)
+// user_id ต้องมาจากแถวในฐานข้อมูล หรือจาก requireUser() ที่ยืนยันกับ Supabase Auth จริงแล้วเท่านั้น — ห้ามเชื่อ payload ภายนอก
 import { createClient } from '@supabase/supabase-js'
 import type { H3Event } from 'h3'
 import { openDb, type Db } from './db'
 import { getTryOnAdapter } from './try-on'
 import type { PrivilegedDeps } from './try-on/lifecycle'
+
+function privilegedClient(event: H3Event) {
+  const config = useRuntimeConfig(event)
+  const url = process.env.SUPABASE_URL
+  if (!url || !config.supabaseSecretKey) throw new Error('ยังไม่ได้ตั้ง SUPABASE_URL / NUXT_SUPABASE_SECRET_KEY')
+  return createClient(url, config.supabaseSecretKey, { auth: { persistSession: false, autoRefreshToken: false } })
+}
 
 // Drizzle ในฐานะเจ้าของตาราง (ข้าม RLS) — ใช้ connection pool เดียวกับ withUserDb (server/utils/db.ts)
 export function openPrivilegedDb(event: H3Event) {
@@ -15,10 +23,15 @@ export function openPrivilegedDb(event: H3Event) {
 
 // Storage ด้วย secret key — ใช้เก็บรูปลุคที่ได้จาก provider และสร้าง signed URL ให้ provider
 export function privilegedStorage(event: H3Event) {
-  const config = useRuntimeConfig(event)
-  const url = process.env.SUPABASE_URL
-  if (!url || !config.supabaseSecretKey) throw new Error('ยังไม่ได้ตั้ง SUPABASE_URL / NUXT_SUPABASE_SECRET_KEY')
-  return createClient(url, config.supabaseSecretKey, { auth: { persistSession: false, autoRefreshToken: false } }).storage
+  return privilegedClient(event).storage
+}
+
+// S15 "ลบข้อมูลทั้งหมด" — ลบบัญชีจริงด้วย Admin API แล้วปล่อยให้ FK cascade ลบแถวที่เหลือทั้งหมดอัตโนมัติ
+// (profiles → poses/items/try_ons/push_subscriptions/daily_usage → looks → look_occasions/look_dislikes/share_links)
+// userId ต้องมาจาก requireUser() ของ caller เองเท่านั้น (ยืนยันตัวตนกับ Supabase Auth แล้ว) ห้ามรับจาก body
+export async function deleteAuthUser(event: H3Event, userId: string) {
+  const { error } = await privilegedClient(event).auth.admin.deleteUser(userId)
+  if (error) throw error
 }
 
 // ประกอบ dependency ของ lifecycle สำหรับ webhook / cron
