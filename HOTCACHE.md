@@ -9,51 +9,52 @@ Mobile-first PWA (UI ไทย) — ผู้ใช้สร้าง twin จ�
 ให้ AI ลองบน twin ผลเป็นลุคใน lookbook ไว้ดูเป็น ref ตอนแต่งตัว หรือแชร์ถามเพื่อนผ่านลิงก์
 
 ## ตอนนี้อยู่ตรงไหน
-- ทำให้เพื่อน — https://github.com/VoramethP/my-twin-styles (ยังไม่เชิญ)
+- ทำให้เพื่อน — github.com/VoramethP/my-twin-styles (ยังไม่เชิญ)
 - ✅ ออกแบบครบ: 25+ การตัดสินใจ · ADR-0001..0006 · drawio 9 หน้า
 - ✅ ต่อ Supabase จริงแล้ว (14 ตาราง · 3 bucket private) · cron active ทุกนาที
-- ✅ magic link ล็อกอินได้จริงครบวงจร — ตั้ง Gmail Custom SMTP แล้ว (แก้ "email rate limit exceeded"
-  ที่ mailer ในตัวของ Supabase จำกัดไว้ต่ำมาก) ดู `docs/SETUP.md` §1
+- ✅ magic link ล็อกอินได้จริง — ตั้ง Gmail Custom SMTP แล้ว (แก้ "email rate limit exceeded" ของ Supabase
+  mailer ในตัว) ดู `docs/SETUP.md` §1
 - ✅ หน้าจอทดสอบผ่าน `npm run dev` แล้ว: S01 login · S04 onboarding · S02/S03 ถ่ายท่า ·
   S08 ตู้เสื้อผ้า + S09 เพิ่มชิ้น · S11 Outfit Builder + S12 เลือกชิ้น (onboarding ①②③ ต่อกันครบ)
-- ✅ **S05/S06 Lookbook + รายละเอียดลุค** — verify จริงแล้ว ใช้ได้และเร็ว (`/`, `/looks/[id]`)
-- ✅ **S07 Remix เทียบคู่** — verify ผ่านล็อกอินจริงแล้วว่าทำงานถูกทุกจุด (ปุ่ม Remix → `/builder?remixOf=`
-  เติมท่า+ชิ้นเดิม → ลุคใหม่มีปุ่ม "ดูเทียบกับลุคเดิม" → `/remix/[id]`)
-- ✅ **S13/S14 แชร์ลุคเขียนเสร็จแล้ว** (2026-09-29 — verify จริงผ่าน `/l/[token]` ด้วยลิงก์ทดสอบสร้างตรงใน DB
-  production: เห็นรูปลุค+ชิ้นถูกต้อง view_count เพิ่มจริง เพิกถอนแล้วตายทันที — **แต่ยัง verify ปุ่ม "แชร์"
-  ฝั่ง S06 ผ่านคลิกจริงไม่ได้**): `/api/share/[token]` เป็นผู้เรียกที่ 4 ของโซนสิทธิ์พิเศษ (ADR-0005 ที่
-  วางแผนไว้แต่แรก) เก็บแค่ token hash โชว์ token ดิบครั้งเดียวตอนสร้าง (ADR-0007 ใหม่)
-- ✅ ทั้ง 3 ฟีเจอร์ข้างบนไม่มี migration ใหม่เลย
-- ✅ `npm run test:db` ผ่านครบ 27 ข้อ · `npm run check` ผ่าน (typecheck + unit 50)
+- ✅ **S05-07 (Lookbook/รายละเอียดลุค/Remix) — verify ผ่านล็อกอินจริงแล้ว** ทำงานถูกทุกจุด
+- ✅ **S13/S14 แชร์ลุคเขียนเสร็จ** (2026-09-29 — verify จริงผ่าน `/l/[token]` ด้วยลิงก์ทดสอบใน DB production
+  แต่**ปุ่ม "แชร์" ฝั่ง S06 ยัง verify คลิกจริงไม่ได้**): `/api/share/[token]` = ผู้เรียกที่ 4 ของโซนสิทธิ์พิเศษ
+  (ADR-0005) เก็บแค่ token hash โชว์ดิบครั้งเดียวตอนสร้าง (ADR-0007)
+- ✅ **S10 รายละเอียดชิ้นเขียนเสร็จ** (2026-09-29 — ยัง verify คลิกจริงไม่ได้เหมือนกัน): กดชิ้นในตู้ →
+  `/wardrobe/[id]` โชว์รูป/ลิงก์ร้าน/ปุ่ม "ลองชิ้นนี้"/รายการลุคที่เคยใช้ชิ้นนี้
+- ✅ ทุกฟีเจอร์ข้างบนไม่มี migration ใหม่ · `npm run test:db` ผ่านครบ 29 ข้อ · `npm run check` ผ่าน (unit 50)
 - ✅ AI adapter ทุกตัวเป็น **mock** — ยังไม่เลือก provider จริง
-- ❌ ยังไม่มี: S10 · S15 · S16 · S17 PWA · deploy · Web Push · nav bar ถาวร
+- ❌ ยังไม่มี: S15 · S16 · S17 PWA · deploy · Web Push · nav bar ถาวร
 
 ## กฎเหล็ก
 1. ไม่มีทางที่คนอื่นเห็นรูปท่า (twin) · แอดมินไม่เห็นทั้งรูปท่าและรูปลุค — แชร์ได้แค่รูปลุคผ่านลิงก์เพิกถอนได้ (ADR-0003)
 2. ทุกการลองผ่านโควต้ารายคน + เพดานรวม ก่อนเรียก AI — ผ่าน `start_try_on()` เท่านั้น (ADR-0002)
-3. secret key ใช้ได้ที่ `server/utils/privileged` ที่เดียว — webhook/cron/push เท่านั้น (ADR-0005)
+3. secret key ใช้ได้ที่ `server/utils/privileged` ที่เดียว — webhook/cron/push/share เท่านั้น (ADR-0005)
 4. query ในนามผู้ใช้ผ่าน `withUserDb()` เท่านั้น — Drizzle owner ข้าม RLS (ADR-0006)
 
 ## งานถัดไป
-1. ผู้ใช้ทดสอบ S13/S14 จริง (กด "แชร์" ที่ S06 → copy → เปิดลิงก์ดูจริง → เพิกถอน)
-2. S10 รายละเอียดชิ้น (ค้นย้อนลุคที่มีชิ้นนี้)
-3. ⚠️ **บัญชีทดสอบของผู้ใช้ (uid `097a63f0-...`) ตั้ง `profiles.daily_quota = 100` ไว้ชั่วคราวเพื่อเทส**
-   (ปกติ 5) ผู้ใช้บอกให้ "เก็บไว้ก่อน" — อย่าลืมถามว่าจะปรับกลับเป็น 5 เมื่อไหร่ ก่อน deploy จริงต้องเช็กอันนี้
+1. ผู้ใช้ทดสอบ S13/S14 (แชร์) และ S10 (รายละเอียดชิ้น) จริงผ่านคลิกเอง
+2. S15 โปรไฟล์+Twin หรือ S16 แอดมิน — ถามก่อนว่าอยากทำอันไหน
+3. ⚠️ บัญชีทดสอบ (uid `097a63f0-...`) ตั้ง `profiles.daily_quota = 100` ชั่วคราว (ปกติ 5) ผู้ใช้ขอ "เก็บไว้
+   ก่อน" — ถามก่อนปรับกลับ/ก่อน deploy จริง
+4. ⚠️ `.env` `NUXT_PUBLIC_SITE_URL` ถูกเปลี่ยนเป็น `http://192.168.1.150:3000` (เดิม `localhost:3000`)
+   เพื่อเทสมือถือในวงแลน — IP อาจเปลี่ยนถ้าต่อ WiFi ใหม่ ถ้า magic link มือถือพังอีกเช็ก `ipconfig getifaddr
+   en0` แล้วอัปเดตทั้ง `.env` และ Supabase Redirect URLs
 อื่น ๆ: เชิญเพื่อน · เลือก AI provider จริง → ADR · Web Push · nav bar 4 แท็บถาวร
 
 ## กับดักที่เคยเจอ
 - repo **public** — commit ใช้อีเมล noreply ของ GitHub ห้ามเปลี่ยนกลับ ต้องมี local `git config user.email` ตั้งไว้เสมอ
 - build: JSON เข้า SQL cast `::text::jsonb` เสมอ · pin `typescript@6` (v7 พังกับ vue-tsc) ·
   npm 11 บล็อก install script → รัน `npx nuxt prepare` เองหลัง `npm i` รอบแรก
-- **`@nuxtjs/supabase` ไม่ exchangeCodeForSession ให้เอง** — เรียกเองที่ `/auth/confirm` · magic link เป็น
-  PKCE ต้องขอ/กดเบราว์เซอร์เดียวกัน → **Claude ล็อกอินแทนผู้ใช้ไม่ได้เลย** fallback ที่ได้ผล: ต่อ
-  `NUXT_DATABASE_URL`/secret key ตรงจากสคริปต์ node ชั่วคราว (ลบทิ้งทุกครั้ง) ยิง business logic จริงในนาม
-  ผู้ใช้แทน — ใช้ verify S07/S13-14 จนสุดทางมาแล้ว
-- **หน้าโหลดช้าเคยเจอ ~4 วิ — แก้แล้ว** (รายละเอียดใน ADR-0006 ส่วนแก้ไขเพิ่มเติม): `openDb()` เปิด
-  `postgres()` ใหม่ทุก request (600ms–2.3วิ/ครั้ง) ไม่ใช่ query เอง — เปลี่ยนเป็น pool แล้ว
+- **PKCE → Claude ล็อกอินแทนผู้ใช้ไม่ได้เลย** — fallback ที่ได้ผล: สคริปต์ node ชั่วคราวต่อ
+  `NUXT_DATABASE_URL`/secret key ตรง ยิง business logic จริงในนามผู้ใช้แทน (ลบสคริปต์ทิ้งทุกครั้ง)
+- **หน้าโหลดช้าเคยเจอ ~4 วิ — แก้แล้ว** (ADR-0006 ส่วนแก้ไขเพิ่มเติม): `openDb()` เปิด `postgres()` ใหม่ทุก
+  request (600ms–2.3วิ/ครั้ง) ไม่ใช่ query เอง — เปลี่ยนเป็น pool แล้ว
 - เปิด .drawio ใน draw.io แล้วบันทึก/export = จัด format ใหม่ทั้งไฟล์ (noise ไม่ใช่เนื้อหาเปลี่ยน)
 - Postgres ทดสอบต้องสร้าง cluster ใหม่ทุกเซสชันตามสูตรใน HANDOFF (`brew install postgresql@16` ถาวรแล้ว)
 - ตู้เสื้อผ้าทดสอบมีชิ้นเสื้อที่รูปเป็นรูปคน (อัปโหลดผิดตอนทดสอบ) — ยังไม่มีปุ่มลบชิ้น เลี่ยงไปก่อน
+- **`useFetch('/api/x/${id}')` เดา type ไม่ได้ (ได้ `{}`) ถ้ามี route พี่น้อง literal ระดับเดียวกัน** เช่น
+  `/api/items/[id]` ชนกับ `/api/items/process` — แก้ด้วยใส่ generic `useFetch<T>(...)` เอง
 
 ---
 📜 ประวัติเต็ม: `docs/WORKLOG.md` · 📐 กฎทั้งหมด: `CLAUDE.md` · 📖 คำศัพท์: `CONTEXT.md`
