@@ -70,13 +70,16 @@ const filtered = computed(() => (allItems.value ?? []).filter(i =>
       </p>
 
       <div v-else class="grid grid-cols-3 gap-2">
-        <div v-for="item in filtered" :key="item.id" class="relative aspect-square overflow-hidden rounded-xl bg-elevated">
+        <NuxtLink
+          v-for="item in filtered" :key="item.id" :to="`/wardrobe/${item.id}`"
+          class="relative aspect-square overflow-hidden rounded-xl bg-elevated"
+        >
           <img :src="item.imageUrl" :alt="item.name ?? item.category" class="size-full object-cover">
           <UBadge
             v-if="item.status === 'wishlist'" label="♡ อยากได้" size="sm" color="neutral" variant="solid"
             class="absolute bottom-1 left-1"
           />
-        </div>
+        </NuxtLink>
       </div>
     </template>
   </main>
