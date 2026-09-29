@@ -94,6 +94,70 @@ async function addOccasion() {
   }
 }
 
+// S13 แชร์ลุค — token ดิบเห็นได้แค่ตอนสร้างใหม่ในเซสชันนี้เท่านั้น เพราะฝั่งเซิร์ฟเวอร์เก็บแค่ hash (ADR-0007)
+const shareOpen = ref(false)
+const shareOpenModel = computed({ get: () => shareOpen.value, set: v => (shareOpen.value = v) })
+const shareLoading = ref(false)
+const shareUrl = ref<string | null>(null)
+const shareMeta = ref<{ createdAt: string, viewCount: number } | null>(null)
+const revokingShare = ref(false)
+let shareChecked = false
+
+async function openShare() {
+  shareOpen.value = true
+  if (shareChecked) return
+  shareChecked = true
+  shareLoading.value = true
+  try {
+    const status = await $fetch(`/api/looks/${id}/share`)
+    if (status.active) {
+      shareMeta.value = { createdAt: status.createdAt!, viewCount: status.viewCount }
+    }
+    else {
+      const created = await $fetch(`/api/looks/${id}/share`, { method: 'POST' })
+      shareUrl.value = created.url
+      shareMeta.value = { createdAt: created.createdAt, viewCount: created.viewCount }
+    }
+  }
+  catch (err) {
+    toast.add({ title: 'เปิดลิงก์แชร์ไม่สำเร็จ', description: (err as Error).message, color: 'error' })
+    shareOpen.value = false
+    shareChecked = false
+  }
+  finally {
+    shareLoading.value = false
+  }
+}
+
+async function copyShareUrl() {
+  if (!shareUrl.value) return
+  await navigator.clipboard.writeText(shareUrl.value)
+  toast.add({ title: 'คัดลอกลิงก์แล้ว', color: 'success' })
+}
+
+async function nativeShare() {
+  if (!shareUrl.value) return
+  if (navigator.share) await navigator.share({ url: shareUrl.value, title: 'ลุคที่แชร์กับคุณ' })
+  else await copyShareUrl()
+}
+
+async function revokeShare() {
+  revokingShare.value = true
+  try {
+    await $fetch(`/api/looks/${id}/share`, { method: 'DELETE' })
+    shareUrl.value = null
+    shareMeta.value = null
+    shareOpen.value = false
+    toast.add({ title: 'เพิกถอนลิงก์แล้ว', color: 'success' })
+  }
+  catch (err) {
+    toast.add({ title: 'เพิกถอนไม่สำเร็จ', description: (err as Error).message, color: 'error' })
+  }
+  finally {
+    revokingShare.value = false
+  }
+}
+
 // 👎 ไม่ถูกใจ — ใช้วัดคุณภาพ ไม่คืนโควต้า (CONTEXT.md)
 const dislikeOpen = ref(false)
 const dislikeOpenModel = computed({ get: () => dislikeOpen.value, set: v => (dislikeOpen.value = v) })
@@ -178,15 +242,10 @@ async function submitDislike(reason: typeof DISLIKE_REASONS[number]) {
       <UButton v-if="noteDirty" label="บันทึกโน้ต" size="sm" variant="outline" :loading="savingNote" @click="saveNote" />
     </section>
 
-    <!-- Remix เปิดใช้แล้ว (S07) · แชร์ยังไม่ทำ (S13) -->
-    <div class="flex flex-col gap-1">
-      <div class="flex gap-2">
-        <UButton :to="`/builder?remixOf=${look.id}`" label="Remix" icon="i-lucide-shuffle" variant="outline" color="neutral" class="flex-1" />
-        <UButton label="แชร์" icon="i-lucide-share-2" variant="outline" color="neutral" disabled class="flex-1" />
-      </div>
-      <p class="text-center text-xs text-dimmed">
-        แชร์ — เร็ว ๆ นี้
-      </p>
+    <!-- Remix (S07) · แชร์ (S13) เปิดใช้แล้วทั้งคู่ -->
+    <div class="flex gap-2">
+      <UButton :to="`/builder?remixOf=${look.id}`" label="Remix" icon="i-lucide-shuffle" variant="outline" color="neutral" class="flex-1" />
+      <UButton label="แชร์" icon="i-lucide-share-2" variant="outline" color="neutral" class="flex-1" @click="openShare" />
     </div>
 
     <!-- ลุคนี้เองเป็นผลจาก Remix — โยงกลับไปเทียบกับลุคต้นทาง (S07) -->
@@ -209,6 +268,40 @@ async function submitDislike(reason: typeof DISLIKE_REASONS[number]) {
           <UButton
             v-for="r in DISLIKE_REASONS" :key="r" :label="DISLIKE_REASON_LABEL[r]" variant="outline" color="neutral" block
             :loading="submittingDislike" @click="submitDislike(r)"
+          />
+        </div>
+      </template>
+    </UDrawer>
+
+    <!-- S13: แชร์ลุคนี้ — token ดิบเห็นได้ครั้งเดียวตอนสร้าง (ADR-0007) -->
+    <UDrawer v-model:open="shareOpenModel" title="แชร์ลุคนี้">
+      <template #body>
+        <div class="flex flex-col gap-3">
+          <p class="text-sm text-muted">
+            คนที่มีลิงก์จะเห็นรูปลุคและรายการชิ้น 🔒 ไม่เห็นรูป twin ของคุณ
+          </p>
+          <template v-if="shareLoading">
+            <USkeleton class="h-10 w-full" />
+          </template>
+          <template v-else-if="shareUrl">
+            <div class="flex gap-2">
+              <UInput :model-value="shareUrl" readonly class="flex-1" />
+              <UButton label="คัดลอก" variant="outline" @click="copyShareUrl" />
+            </div>
+            <UButton label="แชร์ลิงก์…" icon="i-lucide-share" variant="outline" block @click="nativeShare" />
+          </template>
+          <template v-else-if="shareMeta">
+            <p class="text-sm text-muted">
+              มีลิงก์แชร์อยู่แล้ว แต่ดูค่าลิงก์ซ้ำจากที่นี่ไม่ได้ (โชว์ให้แค่ตอนสร้างครั้งแรกเท่านั้น) — ถ้าลิงก์เดิมหาย
+              เพิกถอนแล้วสร้างใหม่ได้
+            </p>
+          </template>
+          <p v-if="shareMeta" class="text-xs text-dimmed">
+            สร้างลิงก์เมื่อ {{ new Date(shareMeta.createdAt).toLocaleDateString('th-TH') }} · เปิดดูแล้ว {{ shareMeta.viewCount }} ครั้ง
+          </p>
+          <UButton
+            v-if="shareMeta" label="เพิกถอนลิงก์" variant="ghost" color="error" size="sm"
+            :loading="revokingShare" @click="revokeShare"
           />
         </div>
       </template>
