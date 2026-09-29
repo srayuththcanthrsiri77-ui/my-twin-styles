@@ -702,6 +702,40 @@ secret key เลยนอกจาก auth admin บรรทัดเดีย
   แยกต่างหากถ้าต้องการเทสจริง
 - ปุ่ม "ติดตั้งแอป"/"ภาษา" ยังเป็นแค่ label เฉย ๆ ไม่ลิงก์ไปไหน (S17/i18n ยังไม่ทำ)
 
+## S16 แอดมิน (2026-09-29)
+
+"เริ่ม S16 แอดมินก่อนเลยครับ" — หน้าแดชบอร์ดให้แอดมินดูสถิติภาพรวม ตั้งเพดานรวม ปรับโควต้ารายคน และดูรายการ
+👎 ล่าสุด (ต้องไม่มีรูปท่า/รูปลุคติดมาเด็ดขาด ตาม ADR-0003)
+
+**ทำไมไม่ใช้โซนสิทธิ์พิเศษ (ADR-0005):** ตอนแรกคิดว่าอาจต้องเพิ่มผู้เรียกที่ 6 เพราะต้อง query ข้าม RLS
+(เช่นอ่าน `profiles`/`daily_usage` ของผู้ใช้คนอื่น) แต่เห็นว่าโปรเจกต์มีแพทเทิร์นนี้อยู่แล้วจาก `admin_stats()`
+(migration 0001) — ฟังก์ชัน SQL `SECURITY DEFINER` ที่เช็ก `role = 'admin'` ของผู้เรียกเองก่อนทำงาน (ผ่าน
+`auth.uid()`) จึงบายพาส RLS ได้อย่างปลอดภัยโดยไม่ต้องแตะ secret key เลย เพราะสิทธิ์ผูกกับ role ในฐานข้อมูล
+ไม่ใช่กับ client ที่เรียก จึงทำตามแพทเทิร์นเดิมแทนที่จะขยายพื้นผิวของ ADR-0005 — คงจำนวนผู้เรียกไว้ที่ 5 เท่าเดิม
+
+เพิ่ม:
+- `drizzle/0003_admin_functions.sql` (custom migration) — 5 ฟังก์ชัน: `assert_admin()` (helper ใช้ร่วม, throw
+  `'forbidden'` ถ้าไม่ใช่ admin), `admin_set_global_cap(cap)`, `admin_set_user_quota(user_id, quota)`,
+  `admin_list_users(search, limit)` (join `auth.users` เอาอีเมล + `daily_usage` วันนี้), `admin_recent_dislikes(limit)`
+  (คืนแค่ `look_id`/`reason`/`created_at` — ไม่มีรูป) ทุกตัว `SECURITY DEFINER` + revoke จาก `PUBLIC, anon`
+- `server/utils/admin.ts` — `adminError()` แปล exception `'forbidden'` จาก SQL เป็น HTTP 403 ให้ endpoint ใช้ร่วมกัน
+- `server/api/admin/{stats,users,dislikes}.get.ts`, `server/api/admin/cap.patch.ts`,
+  `server/api/admin/users/[id].patch.ts` — ทุกตัวผ่าน `withUserDb()` ปกติ (ไม่ใช่ privileged) เพราะ RLS bypass
+  อยู่ในตัวฟังก์ชัน SQL เอง ไม่ใช่ที่ชั้น connection
+- `app/pages/admin/index.vue` — desktop width (`max-w-4xl`) ต่างจากหน้าอื่นที่เป็น `max-w-md` เพราะมีตารางผู้ใช้
+  ที่ต้องการพื้นที่กว้างกว่า · เช็ก `statusCode === 403` จาก `statsError` เพื่อโชว์ "ไม่มีสิทธิ์เข้าถึงหน้านี้"
+  แทนพัง · ค้นหาผู้ใช้มี debounce 300ms
+- `tests/db/admin.test.ts` — ทดสอบทั้ง 5 ฟังก์ชันสองด้าน: ผู้ใช้ทั่วไปเรียกแล้วต้องได้ `forbidden`, แอดมินเรียก
+  แล้วต้องสำเร็จและเห็นผลจริงในตาราง (cap เปลี่ยน/quota เปลี่ยน/list มีแถว/dislikes ไม่มีรูปติดมา)
+
+**Verify:** `npm run db:migrate` ขึ้น production จริงสำเร็จ (มี NOTICE "schema drizzle already exists" ปกติ
+ไม่ใช่ error) · `npm run check` ผ่าน (unit 50) · `npm run test:db` บน local Postgres cluster ใหม่ผ่านครบ 39 ข้อ
+(รวม 7 เคสใหม่ของ admin) · smoke test route จริงผ่าน `node -e` + `fetch()` (เครื่องนี้ไม่มี `curl`) ยืนยันทุก
+`/api/admin/*` คืน 401 ตอนไม่ล็อกอิน ไม่มี 500 · `/admin` โหลดหน้าได้ (200)
+
+**ยังไม่ได้ทำ:** verify คลิกจริงในเบราว์เซอร์ทั้งหน้า (ต้องมีบัญชีที่ `role = 'admin'` ก่อน — Claude ทำให้ไม่ได้
+เพราะไม่มี session จริง ต้องให้ผู้ใช้รัน SQL ตั้ง role เองผ่าน Supabase SQL Editor)
+
 ---
 
 ## งานถัดไป
