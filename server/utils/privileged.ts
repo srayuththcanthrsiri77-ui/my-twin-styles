@@ -6,6 +6,7 @@
 import { createClient } from '@supabase/supabase-js'
 import type { H3Event } from 'h3'
 import { openDb, type Db } from './db'
+import { sendPushToUser } from './push'
 import { getTryOnAdapter } from './try-on'
 import type { PrivilegedDeps } from './try-on/lifecycle'
 
@@ -57,6 +58,12 @@ export function privilegedLifecycleDeps(event: H3Event, db: Db): PrivilegedDeps 
       if (error) throw error
       return path
     },
-    // Web Push ยังไม่ได้ทำ (ต้องมี VAPID key) — ตอนนี้แอปเห็นผลจากการ์ด ⏳ ใน Lookbook
+    // S17: แจ้งเตือนตอนลองเสร็จ/ล้มเหลว — เงียบถ้ายังไม่ได้ตั้ง VAPID หรือผู้ใช้ยังไม่เคย subscribe
+    async notify(userId, e) {
+      const message = e.status === 'succeeded'
+        ? { title: 'ลองชุดเสร็จแล้ว', body: 'ลุคใหม่พร้อมดูแล้วครับ', url: `/looks/${e.lookId}`, tag: e.tryOnId }
+        : { title: 'ลองชุดไม่สำเร็จ', body: 'ขอโทษด้วยครับ ลองใหม่อีกครั้งได้เลย', url: '/', tag: e.tryOnId }
+      await sendPushToUser(event, db, userId, message)
+    },
   }
 }

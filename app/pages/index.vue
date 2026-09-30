@@ -63,6 +63,9 @@ const isEmpty = computed(() => !data.value?.pending.length && !data.value?.looks
     </template>
 
     <template v-else>
+      <!-- S17: ชวนเปิดแจ้งเตือน — โผล่ครั้งแรกหลังมีลุคแรกแล้วเท่านั้น -->
+      <InstallPushCard v-if="data?.looks.length" />
+
       <!-- การลองที่ค้างอยู่ -->
       <section v-if="data?.pending.length" class="flex flex-col gap-2">
         <div v-for="p in data.pending" :key="p.id" class="flex items-center gap-3 rounded-xl bg-elevated p-3">

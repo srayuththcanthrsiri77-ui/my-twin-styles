@@ -756,6 +756,75 @@ Editor ตามที่แนะนำ แล้วเปิด `/admin` จ�
 อ่านด้วย (ค่าที่ผูกกับ "วันนี้" เปลี่ยนได้จริงระหว่างที่คุยกันข้ามเที่ยงคืน) และเช็กว่า **dev server ยังรันอยู่จริง
 ไหม** (`lsof -i :3000`) ก่อนไล่บั๊กเชิงลึกในโค้ด
 
+## S17 PWA + Web Push (2026-09-30)
+
+"เริ่ม S17 PWA เลยครับ" — ตามสโคป design README: "ชวนติดตั้ง PWA แสดงหลังการลองครั้งแรก เพื่อเปิด Web Push"
+และในตาราง MVP v1 "ลองแบบเบื้องหลัง + แจ้งเตือน (ในแอป + **Web Push**)" อยู่ใน scope จริง ไม่ใช่ "ภายหลัง" —
+เลยทำทั้งสองอย่าง: (1) ทำให้แอปติดตั้งเป็น PWA ได้จริง (2) ต่อสาย Web Push ให้ส่งแจ้งเตือนได้จริงตอนลองชุดเสร็จ/ล้มเหลว
+
+**ของที่มีอยู่แล้วตั้งแต่ต้น (เจอระหว่างสำรวจ ไม่ต้องสร้างใหม่):** ตาราง `push_subscriptions` (endpoint/p256dh/auth)
+มีอยู่แล้วตั้งแต่ schema แรก พร้อม RLS ownerCrud · `PrivilegedDeps.notify?` ใน `server/utils/try-on/lifecycle.ts`
+ถูกประกาศไว้ล่วงหน้าและ `failTryOn()`/`handleResult()` เรียก `deps.notify?.(...)` ไว้ให้แล้วตรงจุดที่ถูกต้องทุก
+ที่ — เหลือแค่ implement ตัว `notify` เองใน `privilegedLifecycleDeps()` เท่านั้น (คอมเมนต์เดิมเขียนไว้ตรง ๆ ว่า
+"Web Push ยังไม่ได้ทำ") · `server/utils/push.ts` ถูกระบุไว้แล้วเป็นผู้เรียกที่อนุญาตใน ADR-0005/CLAUDE.md/
+`tests/privileged-imports.test.ts` ตั้งแต่ก่อน S17 เริ่ม — แปลว่าฟีเจอร์นี้ถูกออกแบบรองรับไว้ล่วงหน้าตั้งแต่ตั้ง
+โปรเจกต์ ไม่ต้องแก้ ADR-0005/CLAUDE.md เพิ่มเลย
+
+เพิ่ม:
+- ติดตั้ง `@vite-pwa/nuxt` (manifest + service worker) และ `web-push` (ส่ง Web Push จริง)
+- `app/service-worker/sw.ts` (source ของ service worker, strategy `injectManifest`) — ไม่ precache หน้าไหนเลย
+  (`globPatterns: []`) เพราะทุกหน้าผูก session เหมือนเหตุผลใน `routeRules` เดิม มีไว้แค่ installability + จัดการ
+  `push`/`notificationclick` เอง
+- ไอคอน PWA (`public/icons/`) — วาด SVG เอง (โลโก้ไม้แขวนเสื้อ ธีมเข้ากับแอปเสื้อผ้า) แล้วแปลงเป็น PNG ด้วย
+  `sips` (built-in macOS ไม่ต้องติดตั้งอะไรเพิ่ม): 192/512/maskable-512/apple-touch-icon
+- VAPID keypair สร้างด้วย `web-push generateVAPIDKeys()` ใส่ใน `.env` จริงแล้ว (`NUXT_VAPID_PRIVATE_KEY` ·
+  `NUXT_PUBLIC_VAPID_PUBLIC_KEY`) — **`NUXT_VAPID_SUBJECT` ยังเป็น `mailto:TODO@example.com`** เพราะเป็นอีเมล
+  ที่ push service จริง (FCM ของ Google ฯลฯ) จะใช้ติดต่อ ไม่อยากเดาเองแทนผู้ใช้ ต้องให้ผู้ใช้ใส่อีเมลจริงเอง
+  ก่อน push ที่ส่งไปเบราว์เซอร์จริงจะได้ผล (ตอนนี้ subscribe/ส่งได้ แต่ header contact ยังเป็นค่าปลอมอยู่)
+- `server/utils/push.ts` — `sendPushToUser()` อ่าน subscription ทั้งหมดของ user จาก `db` ที่รับมา (ไม่เปิด
+  connection เอง ไม่แตะ secret key เลย — โซนสิทธิ์พิเศษที่แท้จริงคือ `db` ที่ผู้เรียกส่งมาให้ ข้ามไปเพราะเรียก
+  จาก webhook/cron ที่ไม่มี session) ส่งด้วย `web-push` ทีละอุปกรณ์ · endpoint ที่ตายแล้ว (404/410) ลบทิ้งอัตโนมัติ
+  · error อื่นปล่อยผ่านไม่ทำให้ webhook/cron ล้มเหลว
+- `server/utils/privileged.ts` — เติม `notify` ใน `privilegedLifecycleDeps()` แทนคอมเมนต์เดิม ข้อความภาษาไทย
+  ต่างกันตาม `succeeded`/`failed` พร้อม `url` ไปหน้าลุคหรือหน้าแรก
+- `shared/push.ts` (zod schema) · `server/api/push/subscribe.post.ts` (upsert ตาม endpoint — ตั้งใจไม่ set
+  `user_id` ใน `onConflictDoUpdate` เพื่อให้ RLS update policy ยังกันคนละบัญชีแย่ง endpoint กันไม่ได้) ·
+  `server/api/push/unsubscribe.post.ts`
+- `app/composables/usePush.ts` (ฝั่ง client: ขอ permission + `pushManager.subscribe()` + POST ไป backend) ·
+  `app/components/InstallPushCard.vue` (S17 การ์ดจริง — โผล่ในหน้า Lookbook ตอนมีลุคแรกแล้วเท่านั้น ปิดแล้วไม่
+  โผล่อีก จำผ่าน localStorage, แยก UI ระหว่าง iOS ที่ยังไม่ได้ติดตั้ง (ต้อง "เพิ่มไปยังหน้าจอโฮม" ก่อนถึงจะเปิด
+  แจ้งเตือนได้ — ข้อจำกัดของ iOS ที่ไม่รองรับ Web Push นอก standalone mode) กับที่อื่น ๆ ที่เปิดแจ้งเตือนตรงได้เลย)
+- `tests/db/push.test.ts` — RLS ของ `push_subscriptions`: เห็น/ลบได้แค่ของตัวเอง · upsert ตาม endpoint ทับ
+  คีย์เดิมของตัวเองได้แต่แย่ง endpoint คนอื่นไม่ได้ (`on conflict do update` ชน RLS update policy)
+
+**บั๊กที่เจอระหว่างต่อ service worker เข้ากับ Nuxt 4 (ไม่มีเอกสารตรง ๆ ต้องไล่เอง):**
+1. `@vite-pwa/nuxt` resolve `srcDir` ของ service worker source ตาม `nuxt.options.srcDir` ซึ่ง Nuxt 4 ค่าเริ่มต้น
+   เป็น `app/` (ต่างจาก Nuxt 3 ที่เป็น root) — วางไฟล์ไว้ที่ `service-worker/sw.ts` (root) แล้วเจอ
+   `ENOENT: .../app/service-worker/sw.ts` ตรง ๆ ในล็อก แก้โดยย้ายไปไว้ที่ `app/service-worker/sw.ts`
+2. ตอน dev, service worker จริงไม่ได้อยู่ที่ `/sw.js` แต่เป็น `/dev-sw.js?dev-sw` (virtual module ของ
+   vite-plugin-pwa เพื่อให้ HMR ได้) — เจอ error จริงในคอนโซล browser: **"The script resource is behind a
+   redirect, which is disallowed."** ไล่จนพบว่า `redirectOptions.exclude` ของ `@nuxtjs/supabase` ต้องรวม path
+   พวกนี้ด้วย เพราะ route middleware ของมันเป็น global middleware ที่รันตอน SSR ทุก path ไม่ใช่แค่ตอน client
+   navigate — ถ้าไม่ล็อกอินและ path ไม่อยู่ใน exclude มันจะ `navigateTo('/login')` แม้กับ path ที่ไม่ใช่หน้าเว็บ
+   จริงเลยก็ตาม ทำให้ service worker ลงทะเบียนไม่ได้ (browser ห้าม register SW จาก URL ที่ redirect) — แก้โดย
+   เพิ่ม `/manifest.webmanifest` · `/sw.js` · `/dev-sw.js` · `/workbox-*` · `/icons/*` เข้า exclude list
+3. `@vite-pwa/nuxt` **ไม่ใส่** `<link rel="manifest">` ให้อัตโนมัติ (มีแค่ endpoint `/manifest.webmanifest` เฉย ๆ)
+   ต้องประกาศเองใน `app.head.link` — เข้าใจผิดตอนแรกว่าโมดูลจัดการให้ครบ ต้องไล่อ่าน source ของโมดูลเองถึงเจอ
+
+**Verify:** `npm run check` ผ่าน (unit 50) · `npm run test:db` บน local Postgres cluster ใหม่ผ่านครบ 44 ข้อ (รวม
+5 เคสใหม่ของ push) · `npm run build` โปรดักชันสำเร็จ ตรวจ `.output/public/sw.js`/`manifest.webmanifest` มีจริง
+และมี `notificationclick`/`showNotification` อยู่ในบันเดิลจริง · ทดสอบจริงในเบราว์เซอร์ (built-in browser ของ
+Claude ไม่มี session แต่ทดสอบ installability ได้โดยไม่ต้องล็อกอิน): service worker ลงทะเบียนสำเร็จ + activate
+จริง (`state: activated`, `scriptURL: /dev-sw.js?dev-sw`), manifest link ถูกต้อง, ไอคอนโหลดได้ครบทุกขนาด ·
+`/api/push/subscribe`·`/unsubscribe` คืน 401 ตอนไม่ล็อกอินถูกต้อง
+
+**ยังไม่ได้ทำ (ต้องให้ผู้ใช้ทำเอง):**
+- ใส่อีเมลจริงแทน `mailto:TODO@example.com` ใน `.env`'s `NUXT_VAPID_SUBJECT` ก่อน push จริงจะส่งได้สมบูรณ์
+- ทดสอบการ์ด "เปิดแจ้งเตือน" คลิกจริงในเบราว์เซอร์ของตัวเอง (ต้องล็อกอิน + มีลุคอย่างน้อย 1 ลุค) แล้วลองชุดอีกครั้ง
+  ดูว่าแจ้งเตือนจริงขึ้นมาไหมตอนลองเสร็จ (Claude ทำแทนไม่ได้เหมือนเคย — ไม่มี session จริง)
+- ทดสอบติดตั้งจริงบน Android/iOS (Android ผ่าน `beforeinstallprompt`, iOS ต้องกดปุ่มแชร์ → "เพิ่มไปยังหน้าจอโฮม"
+  เองเพราะ iOS ไม่รองรับ prompt อัตโนมัติ)
+
 ---
 
 ## งานถัดไป
