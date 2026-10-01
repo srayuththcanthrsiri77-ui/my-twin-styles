@@ -893,6 +893,46 @@ Claude ไม่มี session แต่ทดสอบ installability ได้
 build ผ่าน) ยกเว้น "ลองชุด" ที่ตั้งใจบล็อกไว้จนกว่าจะเลือก AI provider จริง ตามแผนเดิม — `origin` ของ repo
 เปลี่ยนไปเป็น `srayuththcanthrsiri77-ui/my-twin-styles` แล้วถาวร (ไม่ใช่ `VoramethP` อีกต่อไป)
 
+## เลือก AI provider จริง — fal.ai OmniGen V2 (ADR-0008, 2026-10-01)
+
+"เลือก AI provider จริงกันเลยไหมครับ" — ก่อนเขียนโค้ด research ผู้ให้บริการ virtual try-on ที่มีจริงตอนนี้ก่อน
+(WebSearch + WebFetch อ่านเอกสารจริงของแต่ละเจ้า ไม่เดา) เจอข้อจำกัดสำคัญที่ไม่เคยคิดไว้ก่อน: **โมเดลลองเสื้อผ้า
+คุณภาพดีที่สุด (FASHN, IDM-VTON ฯลฯ) รับได้ทีละ 1 ชิ้นเสื้อผ้าต่อการเรียก 1 ครั้งเท่านั้น** ในขณะที่แอปออกแบบ
+ให้เลือกได้ทั้งเสื้อ+ท่อนล่าง+ชั้นนอกพร้อมกัน (`shared/outfit.ts`) — ถ้าเลือกเจ้าคุณภาพสูงสุดจะต้องสร้างระบบ
+เรียก API ต่อเนื่องหลายรอบ (เอาผลรอบแรกมาเป็น input รอบสอง) ซึ่งเปลี่ยนสถาปัตยกรรม `TryOnAdapter` จาก
+"submit ครั้งเดียว → webhook ครั้งเดียวจบ" เป็น stateful หลายขั้นตอน
+
+ให้ผู้ใช้ตัดสินใจเองระหว่าง 2 ทาง (ถามด้วย AskUserQuestion เพราะเป็น trade-off คุณภาพ vs ความซับซ้อนที่ควร
+เป็นคนตัดสินใจ ไม่ใช่ Claude เลือกเอง): (1) OmniGen V2 ผ่าน fal.ai — เริ่มง่ายกว่า รับรูปได้ 3 ใบ/ครั้งพอดี
+(ท่า+เสื้อ+ท่อนล่าง) ในคำขอเดียว ไม่ต้องทำ state หลายรอบ แต่เป็นโมเดล image-editing ทั่วไปไม่ได้เทรนมาเพื่อ
+ลองเสื้อผ้าโดยเฉพาะ คุณภาพอาจสู้เจ้าเฉพาะทางไม่ได้ (2) FASHN คุณภาพดีกว่ามากแต่ต้องสร้างระบบเรียกต่อเนื่อง —
+ผู้ใช้เลือกข้อ (1) เพราะอยากเริ่มง่ายก่อน
+
+เพิ่ม:
+- `server/utils/try-on/fal-omnigen.ts` — adapter ใหม่ implement `TryOnAdapter` เดิมทั้งหมด:
+  - `selectGarments()` เรียงลำดับความสำคัญ (`dress > top > bottom > outer`) แล้วตัดเหลือ 2 ชิ้นสูงสุด — ชุดที่
+    ครบ 3 ชิ้น (เสื้อ+ท่อนล่าง+ชั้นนอก) จะตัด "ชั้นนอก" ออกจากภาพที่ส่งให้ AI โดยอัตโนมัติ (ยังบันทึกเป็นส่วนหนึ่ง
+    ของชุดในฐานข้อมูลตามปกติ แค่ไม่ถูก render) — ยอมรับข้อจำกัดนี้ไว้ตรง ๆ ใน ADR-0008
+  - `buildPrompt()` ประกอบ text prompt ภาษาอังกฤษบอกโมเดลว่ารูปไหนคือท่า รูปไหนคือชิ้นเสื้อผ้าไหน
+  - `verifyFalWebhook()` ตรวจลายเซ็น **ED25519** ตามสเปกจริงของ fal.ai: ดึง public key จาก JWKS
+    (`https://rest.fal.ai/.well-known/jwks.json`, cache 24 ชม.) เช็ก timestamp ไม่เกิน 5 นาที (กัน replay)
+    แล้ว verify ด้วย Node `crypto.verify` แบบ native (import public key เป็น JWK ตรง ๆ ไม่ต้องพึ่ง library
+    เสริมอย่าง libsodium) — เลือกใช้ fal.ai แทน FASHN ตรง ๆ ส่วนหนึ่งเพราะเหตุผลนี้ด้วย (FASHN ไม่มีลายเซ็น
+    webhook ให้ตรวจเลย ต้องพึ่ง secret ใน query string แทนซึ่งอ่อนกว่า)
+- `server/utils/try-on/adapter.ts` — เปลี่ยน `parseWebhook()` จาก sync เป็น `Promise<TryOnResult> | TryOnResult`
+  เพราะ fal.ai ต้อง await ดึง JWKS ก่อนตรวจได้ — กระทบแค่จุดเดียวคือ `server/api/webhooks/try-on.post.ts`
+  (เติม `await`) ส่วน mock adapter ยังคืนค่าแบบ sync ได้ปกติ (รองรับทั้งสองแบบผ่าน union type)
+- `server/utils/try-on/index.ts` — เพิ่มทางเลือก `NUXT_TRY_ON_PROVIDER=fal-omnigen`
+- `docs/adr/ADR-0008-fal-omnigen-as-try-on-provider.md` — บันทึกเหตุผลเต็มของการเลือกและสิ่งที่ยอมรับ trade-off
+- `tests/try-on-fal.test.ts` — เทส `selectGarments`/`buildPrompt` ตรง ๆ และเทส `verifyFalWebhook` ด้วย keypair
+  ED25519 จริงที่ generate ขึ้นมาเอง (Node `crypto.generateKeyPairSync`) ยืนยันทั้งเคสผ่านจริง ลายเซ็นผิด
+  timestamp เก่าเกิน (replay) และ header ขาด — ไม่ใช้ `vi.mock` ตามธรรมเนียมโปรเจกต์ ใช้ stub `globalThis.fetch`
+  ตรง ๆ แทนสำหรับ JWKS endpoint เท่านั้น (ขอบเขตแคบ คืนค่าเดิมหลังเทสเสร็จ)
+
+**Verify:** `npm run check` ผ่าน (unit 57, เพิ่มจาก 50) · dev server restart สะอาด ไม่มี error หลังติดตั้ง
+`@fal-ai/client` และแก้ `nuxt.config.ts` · **ยังไม่ได้ทดสอบยิง API จริง** เพราะยังไม่มี `NUXT_FAL_API_KEY` —
+ผู้ใช้ต้องสมัคร fal.ai เอาคีย์มาเองก่อน (ของที่ต้องทำต่อเหมือนเคย ไม่ใช่สิ่งที่ Claude ทำแทนได้)
+
 ---
 
 ## งานถัดไป
