@@ -835,6 +835,64 @@ Claude ไม่มี session แต่ทดสอบ installability ได้
 ทำงานจบครบวงจรจริงตั้งแต่ subscribe → service worker รับ push event → `showNotification()` แสดงผล โดยไม่ต้องแก้
 โค้ดอะไรเพิ่มเลย — ของที่ implement ไว้ถูกต้องตั้งแต่รอบแรก
 
+## Deploy Vercel (2026-10-01)
+
+"เริ่ม deploy ขึ้น Vercel จริงเลยครับ" — เดิมตั้งใจจะ deploy repo `VoramethP/my-twin-styles` (repo เดิมของ
+โปรเจกต์มาตลอด) แต่เจออุปสรรคเรื่องบัญชีกลางทาง เลยจบที่ย้าย repo ทั้งหมดไปอยู่ใต้บัญชี GitHub ของผู้ใช้เอง
+(`srayuththcanthrsiri77-ui`) แทน
+
+**ปัญหาที่เจอและทางแก้ ตามลำดับที่เจอจริง:**
+
+1. **เลือก AI provider ก่อนหรือ deploy ก่อน** — ถามผู้ใช้ก่อนเริ่ม เพราะ `getTryOnAdapter()`
+   (`server/utils/try-on/index.ts:12`) มีเช็ก `process.env.VERCEL_ENV === 'production'` กัน mock adapter ไม่
+   ให้ใช้บน production จริงไว้ตั้งแต่ต้น (เขียนไว้ก่อน S17 นานแล้ว) — ผู้ใช้เลือก "deploy แบบ preview ก่อน" คือ
+   ยังไม่เลือก provider จริง แต่ deploy ไปโชว์เพื่อน/ทดสอบ UI อื่นได้ก่อน
+
+2. **GitHub account ไม่ตรงกับเจ้าของ repo** — ผู้ใช้สมัคร Vercel ใหม่ด้วย GitHub account `sarayuth.boom1960`
+   (อีเมล `srayuththcanthrsiri77@gmail.com`) แต่ repo โปรเจกต์อยู่ใต้บัญชี `VoramethP` (คนละบัญชีกัน แม้จะเป็น
+   repo **public** ก็ตาม) — ติดตั้ง Vercel GitHub App บนบัญชี `sarayuth.boom1960` แล้วหา repo ไม่เจอ
+   ("No repositories found") เพราะ **GitHub App ติดตั้งได้แค่บน repo ที่บัญชีนั้นเป็นเจ้าของเองเท่านั้น** การที่
+   repo public โชว์อยู่ใน "Top repositories" ของบัญชีอื่นไม่ได้แปลว่ามีสิทธิ์ติดตั้งแอปบน repo นั้น
+   - ผู้ใช้ยืนยันว่า `VoramethP` "แค่ขึ้นโครงสร้างให้" (คนละคนกับที่คุยด้วยตอนนี้) และขอให้ย้ายไปใช้ GitHub ของ
+     ตัวเองแทนไปเลย — ใช้ `gh` CLI ที่ authenticated อยู่แล้วในเครื่อง (`gh auth status` ยืนยัน login เป็น
+     `srayuththcanthrsiri77-ui`) สร้าง repoใหม่ `gh repo create srayuththcanthrsiri77-ui/my-twin-styles
+     --public --source=. --remote=github-new` แล้วสลับ `origin` ไปชี้ repo ใหม่ `git push -u origin main` —
+     ประวัติ commit ทั้ง 50 commits ย้ายไปครบ ไม่กระทบ repo เดิมของ `VoramethP` เลย (ยังอยู่เหมือนเดิม)
+
+3. **หา `.env` ไม่เจอตอนเลือกไฟล์ import เข้า Vercel** — macOS ซ่อนไฟล์ที่ขึ้นต้นด้วยจุดในหน้าต่างเลือกไฟล์
+   ค่าเริ่มต้น ผู้ใช้ไม่เคยรู้มาก่อนว่ากด `Cmd+Shift+.` โชว์ไฟล์ซ่อนได้ หรือ `Cmd+Shift+G` พิมพ์ path ตรงได้ —
+   ใช้ปุ่ม "Import .env" ของ Vercel เองสะดวกกว่าต้องเลือกทีละตัวแปรมาก (รองรับไฟล์ `.env` ตรง ๆ)
+
+4. **"Create Project" กดซ้ำสร้างโปรเจกต์ซ้ำ** — ชื่อที่ชนกันโดน Vercel เติมหางสุ่มให้ (`my-twin-styles-o2hi`)
+   ลบตัวซ้ำออกที่ Settings → เลื่อนสุดล่าง → "Delete Project" → พิมพ์ชื่อ + "delete my project" ยืนยัน 2 ชั้น
+
+5. **อยากให้ `main` เป็น Preview ไม่ใช่ Production (ตามข้อ 1)** — ไปหา "Production Branch" เจอยากกว่าที่คิด
+   Vercel ย้ายมาอยู่ที่ **Settings → Environments → Production → Branch Tracking** แล้ว (ไม่ใช่ใต้ "Git" หรือ
+   "Build and Deployment" ตามความคาดหวังเดิม) และ **ตั้งเป็นชื่อ branch ที่ไม่มีจริงไม่ได้** ("Branch \"branch\"
+   not found in the connected Git repository") ต้องสร้าง branch จริงก่อน — สร้าง `git branch prod main &&
+   git push -u origin prod` แล้วค่อยตั้ง Production Branch = `prod` สำเร็จ
+
+6. **Deploy แรกสุดขึ้นเป็น Production อยู่ดี** แม้เพิ่งเปลี่ยน Production Branch ไปเป็น `prod` ก่อนหน้านั้นแล้ว —
+   push `git commit --allow-empty` เข้า `main` เพื่อกระตุ้น deploy (เพราะตอนสร้าง repo ใหม่ยังไม่มี webhook ตอน
+   push ครั้งแรก) ได้ deployment ที่ "Ready" แต่ติด badge "Production" ทั้งที่ branch คือ `main` — สรุปว่า deploy
+   แรกสุดของโปรเจกต์ Vercel ถือเป็น Production เสมอไม่ว่าตั้งค่าอะไรไว้ก็ตาม (ครั้งต่อ ๆ ไปถึงจะตามการตั้งค่าจริง)
+   — ไม่ใช่ปัญหาใหญ่เพราะหน้าเว็บทั่วไปใช้ได้ปกติ กระทบแค่ปุ่ม "ลองชุด" ตามที่ตั้งใจไว้ตั้งแต่ข้อ 1
+
+7. **ลืมแก้ `NUXT_PUBLIC_SITE_URL` ก่อน deploy** — ยังเป็น `http://localhost:3000` ตอน deploy เสร็จรอบแรก แก้
+   ทีหลังได้เลยที่ Environment Variables → Redeploy ไม่กระทบ build (ค่านี้มีผลแค่ตอนสร้างลิงก์ใน magic link
+   email เท่านั้น) พร้อมเพิ่ม `https://my-twin-styles.vercel.app/auth/confirm` ใน Supabase Redirect URLs
+
+8. **ทดสอบ magic link login จริงแล้วหาอีเมลไม่เจอ** — เช็ก Supabase **Logs → filter `Auth` + ค้นหา `otp`** เจอ
+   ว่า POST `/otp` คืน 200 สำเร็จจริง 2 ครั้ง (event message "User recovery requested: request completed" —
+   ศัพท์ภายในของ GoTrue ใช้ชื่อนี้แม้เป็น magic link ธรรมดา ไม่ใช่ password recovery) แปลว่าปัญหาไม่ได้อยู่ที่
+   Supabase/โค้ด แต่อีเมลหาไม่เจอใน Gmail เพราะ **Custom SMTP ส่งจาก Gmail ของตัวเอง ทำให้ Gmail โชว์ผู้ส่งเป็น
+   "ฉัน"** ซึ่งการค้นหาปกติ (กล่องขาเข้า/ถังขยะ) มองข้ามง่ายมาก ต้องค้นด้วย `in:anywhere` ถึงจะเจอ — login
+   สำเร็จจริงหลังเจออีเมล
+
+**สรุปสถานะ:** `https://my-twin-styles.vercel.app` ใช้งานได้จริง (login ผ่าน magic link, SSR เรนเดอร์ปกติ,
+build ผ่าน) ยกเว้น "ลองชุด" ที่ตั้งใจบล็อกไว้จนกว่าจะเลือก AI provider จริง ตามแผนเดิม — `origin` ของ repo
+เปลี่ยนไปเป็น `srayuththcanthrsiri77-ui/my-twin-styles` แล้วถาวร (ไม่ใช่ `VoramethP` อีกต่อไป)
+
 ---
 
 ## งานถัดไป
