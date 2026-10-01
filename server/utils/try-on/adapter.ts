@@ -26,5 +26,6 @@ export interface TryOnAdapter {
   readonly name: string
   submit(req: TryOnRequest): Promise<TryOnSubmission>
   // ตรวจลายเซ็นก่อนเชื่อ payload เสมอ (ADR-0005) — ไม่ผ่านให้ throw InvalidWebhookSignature
-  parseWebhook(headers: Record<string, string | undefined>, rawBody: string): TryOnResult
+  // async เพราะบาง provider (fal.ai) ต้องดึง public key มาตรวจก่อน (ADR-0008)
+  parseWebhook(headers: Record<string, string | undefined>, rawBody: string): Promise<TryOnResult> | TryOnResult
 }

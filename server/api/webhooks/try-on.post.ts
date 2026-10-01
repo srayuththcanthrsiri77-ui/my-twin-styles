@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   const adapter = getTryOnAdapter(event)
   let result
   try {
-    result = adapter.parseWebhook(getRequestHeaders(event), raw)
+    result = await adapter.parseWebhook(getRequestHeaders(event), raw)
   }
   catch (err) {
     if (err instanceof InvalidWebhookSignature) throw createError({ statusCode: 401, statusMessage: 'invalid_signature' })

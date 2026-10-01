@@ -15,6 +15,7 @@
     "test:db": "bash tests/db/run-local.sh"
   },
   "dependencies": {
+    "@fal-ai/client": "^1.10.1",
     "@nuxt/ui": "^4.11.0",
     "@nuxtjs/supabase": "^2.0.10",
     "@supabase/supabase-js": "^2.116.0",

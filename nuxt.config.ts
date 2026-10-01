@@ -35,9 +35,10 @@ export default defineNuxtConfig({
   runtimeConfig: {
     databaseUrl: '', // NUXT_DATABASE_URL — Supabase pooler (transaction mode)
     supabaseSecretKey: '', // NUXT_SUPABASE_SECRET_KEY — อ่านได้ที่ server/utils/privileged.ts ที่เดียว (ADR-0005)
-    tryOnProvider: 'mock', // NUXT_TRY_ON_PROVIDER — ยังไม่เลือกเจ้าจริง
-    tryOnWebhookSecret: '', // NUXT_TRY_ON_WEBHOOK_SECRET
+    tryOnProvider: 'mock', // NUXT_TRY_ON_PROVIDER — 'mock' หรือ 'fal-omnigen' (เจ้าจริง ADR-0008)
+    tryOnWebhookSecret: '', // NUXT_TRY_ON_WEBHOOK_SECRET — ใช้กับ mock adapter เท่านั้น
     tryOnMockFailRate: '0', // NUXT_TRY_ON_MOCK_FAIL_RATE — 0–1 ใช้ทดสอบ flow ล้มเหลว
+    falApiKey: '', // NUXT_FAL_API_KEY — fal.ai (OmniGen V2) ใช้ได้แค่ตอนสร้าง adapter (ADR-0008)
     cronSecret: '', // NUXT_CRON_SECRET
     vapidPrivateKey: '', // NUXT_VAPID_PRIVATE_KEY — ใช้ได้ที่ server/utils/push.ts ที่เดียว (S17)
     vapidSubject: '', // NUXT_VAPID_SUBJECT — mailto: ที่ push service ใช้ติดต่อถ้ามีปัญหา
