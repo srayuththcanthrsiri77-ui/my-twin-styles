@@ -13,12 +13,11 @@ Mobile-first PWA (UI ไทย) — ผู้ใช้สร้าง twin จ�
 - ✅ ออกแบบครบ · ADR-0001..0007 · drawio 9 หน้า
 - ✅ ต่อ Supabase จริงแล้ว (14 ตาราง · 3 bucket private) · cron active ทุกนาที · magic link ล็อกอินได้จริง
 - ✅ **S01–S16 ทำครบและ verify คลิกจริงผ่านเบราว์เซอร์แล้วทุกหน้า**
-- ✅ **S17 PWA + Web Push เขียนเสร็จ (2026-09-30)**: `@vite-pwa/nuxt` + `web-push` — manifest/ไอคอน/service
-  worker (`app/service-worker/sw.ts`, ไม่ precache เพราะทุกหน้าผูก session) ติดตั้งเป็นแอปได้จริง · `notify`
-  ใน `privilegedLifecycleDeps()` ต่อ Web Push จริงตอนลองชุดเสร็จ/ล้มเหลว ผ่าน `server/utils/push.ts` · การ์ด
-  `InstallPushCard.vue` โผล่ในหน้า Lookbook ตอนมีลุคแรก · VAPID key ใส่ `.env` แล้ว **แต่ `NUXT_VAPID_SUBJECT`
-  ยังเป็น placeholder `mailto:TODO@example.com`** ต้องผู้ใช้ใส่อีเมลจริงก่อน push จะสมบูรณ์ · `npm run build`
-  โปรดักชันผ่าน · `test:db` ผ่านครบ 44 ข้อ · **ยัง verify subscribe/ได้รับแจ้งเตือนจริงไม่ได้ ต้องผู้ใช้ทดสอบเอง**
+- ✅ **S17 PWA + Web Push — verify คลิกจริงผ่านเบราว์เซอร์แล้ว (2026-10-01)**: `@vite-pwa/nuxt` + `web-push` —
+  manifest/ไอคอน/service worker (`app/service-worker/sw.ts`) ติดตั้งเป็นแอปได้จริง · `notify` ใน
+  `privilegedLifecycleDeps()` ส่ง Web Push จริงตอนลองชุดเสร็จ/ล้มเหลว ผ่าน `server/utils/push.ts` · การ์ด
+  `InstallPushCard.vue` โผล่ในหน้า Lookbook ตอนมีลุคแรก · ผู้ใช้ใส่อีเมลจริงใน `NUXT_VAPID_SUBJECT` แล้ว ลองชุด
+  จริงแล้วเห็นแจ้งเตือน "ลองชุดเสร็จแล้ว" ขึ้นจริงที่ Chrome notification — ครบวงจร subscribe → push → แสดงผล
 - ✅ `npm run check` ผ่าน (unit 50)
 - ✅ AI adapter ทุกตัวเป็น **mock** — ยังไม่เลือก provider จริง
 - ❌ ยังไม่มี: deploy จริง · nav bar ถาวร 4 ปุ่ม
@@ -31,11 +30,10 @@ Mobile-first PWA (UI ไทย) — ผู้ใช้สร้าง twin จ�
 4. query ในนามผู้ใช้ผ่าน `withUserDb()` เท่านั้น (ADR-0006)
 
 ## งานถัดไป
-1. ⚠️ ใส่อีเมลจริงแทน `mailto:TODO@example.com` ใน `.env`'s `NUXT_VAPID_SUBJECT` (S17)
-2. ผู้ใช้ทดสอบเปิดแจ้งเตือน + ติดตั้งแอปจริงบน Android/iOS เอง (Claude ไม่มี session ทำแทนไม่ได้)
-3. ผู้ใช้ทดสอบ "ลบ twin"/"ลบข้อมูลทั้งหมด" (S15) เอง — **ห้าม Claude รันแทนแม้ผู้ใช้จะขอให้ช่วยเทส**
-4. ⚠️ บัญชี `srayuththcanthrsiri77@gmail.com` ตั้ง `daily_quota=100` ชั่วคราว (ปกติ 5) — ถามก่อนปรับกลับ
-5. ⚠️ IP เครื่อง dev เปลี่ยนบ่อย (ล่าสุด `172.20.10.2`) — เช็ก log ตอนรัน dev แล้วอัปเดต `.env` +
+1. ผู้ใช้ทดสอบติดตั้งแอปจริงบน Android/iOS เอง (push ทดสอบผ่านแล้วบน desktop Chrome)
+2. ผู้ใช้ทดสอบ "ลบ twin"/"ลบข้อมูลทั้งหมด" (S15) เอง — **ห้าม Claude รันแทนแม้ผู้ใช้จะขอให้ช่วยเทส**
+3. ⚠️ บัญชี `srayuththcanthrsiri77@gmail.com` ตั้ง `daily_quota=100` ชั่วคราว (ปกติ 5) — ถามก่อนปรับกลับ
+4. ⚠️ IP เครื่อง dev เปลี่ยนบ่อย (ล่าสุด `172.20.10.2`) — เช็ก log ตอนรัน dev แล้วอัปเดต `.env` +
    Supabase Redirect URLs
 อื่น ๆ: เชิญเพื่อน · เลือก AI provider จริง · deploy Vercel · nav bar ถาวร
 
