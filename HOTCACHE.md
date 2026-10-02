@@ -20,12 +20,15 @@ Mobile-first PWA (UI ไทย) — ผู้ใช้สร้าง twin จ�
 - ✅ **S17 PWA + Web Push — verify จริงแล้ว (2026-10-01)**: `@vite-pwa/nuxt` + `web-push` ติดตั้งเป็นแอปได้จริง ·
   `notify` ใน `privilegedLifecycleDeps()` → `server/utils/push.ts` ส่งแจ้งเตือนจริงตอนลองชุดเสร็จ/ล้มเหลว ·
   การ์ด `InstallPushCard.vue` โผล่หลังมีลุคแรก · เห็นแจ้งเตือนจริงขึ้นที่ Chrome แล้ว ครบวงจร
-- ⏸️ **AI provider จริงเขียนเสร็จแต่พักไว้ (ADR-0008, 2026-10-02)**: `server/utils/try-on/fal-omnigen.ts`
-  (fal.ai OmniGen V2) ต่อสำเร็จจริง (ทดสอบแล้วเจอ `403 Exhausted balance` ยืนยันว่าโค้ด/คีย์ถูกต้อง) แต่
-  fal.ai ไม่มีเครดิตฟรีเลย ผู้ใช้ไม่อยากจ่ายตอนนี้ — **`NUXT_TRY_ON_PROVIDER` กลับไปเป็น `mock` ทั้ง `.env`
-  และ Vercel แล้ว** โค้ด fal-omnigen เก็บไว้ไม่ลบ พร้อมเปิดทันทีที่พร้อมจ่าย (แค่เปลี่ยน env 2 ตัว) · สำรวจแล้ว
-  ไม่มีเจ้าไหนฟรีจริงที่ใช้งานได้จริง — ใกล้สุดคือ Replicate ที่มีรายงานว่าให้เครดิตฟรีตอนสมัคร (ยังไม่ได้ลอง)
-- ❌ ยังไม่มี: nav bar ถาวร 4 ปุ่ม · merge `prod` จริง (ยัง preview อยู่) · AI provider จริงใช้งานจริง
+- ⏸️ **AI provider จริงเขียนเสร็จแต่พักไว้ (ADR-0008)**: `server/utils/try-on/fal-omnigen.ts` (fal.ai
+  OmniGen V2) ต่อสำเร็จจริง (เจอ `403 Exhausted balance` ยืนยันว่าโค้ด/คีย์ถูกต้อง) แต่ fal.ai ไม่มีเครดิตฟรี
+  ผู้ใช้ไม่อยากจ่ายตอนนี้ — **`NUXT_TRY_ON_PROVIDER` กลับเป็น `mock` ทั้ง `.env`+Vercel แล้ว** โค้ดเก็บไว้ไม่ลบ
+  พร้อมเปิดทันทีที่พร้อมจ่าย (แค่เปลี่ยน env 2 ตัว) · ไม่มีเจ้าไหนฟรีจริงที่ใช้งานได้จริง — ใกล้สุดคือ Replicate
+  (รายงานว่าให้เครดิตฟรีตอนสมัคร ยังไม่ได้ลอง)
+- ✅ **nav bar ถาวร 4 ปุ่มเสร็จแล้ว**: `app/layouts/tabs.vue` + `BottomNav.vue` ครอบหน้าลุค/ตู้เสื้อผ้า/
+  โปรไฟล์ ไฮไลต์ปุ่มตาม route · ลบปุ่มลิงก์ชั่วคราวที่หัวแต่ละหน้าแล้ว · `npm run check` ผ่าน · ยัง verify
+  คลิกจริงไม่ได้ (ต้อง login — ผู้ใช้ต้องเช็กเอง)
+- ❌ ยังไม่มี: merge `prod` จริง (ยัง preview อยู่) · AI provider จริงใช้งานจริง
 
 ## กฎเหล็ก
 1. ไม่มีทางที่คนอื่นเห็นรูปท่า (twin) · แอดมินไม่เห็นทั้งรูปท่าและรูปลุค — แชร์ได้แค่รูปลุคผ่านลิงก์เพิกถอนได้ (ADR-0003)
@@ -35,28 +38,29 @@ Mobile-first PWA (UI ไทย) — ผู้ใช้สร้าง twin จ�
 4. query ในนามผู้ใช้ผ่าน `withUserDb()` เท่านั้น (ADR-0006)
 
 ## งานถัดไป
-1. (พักไว้) ถ้าพร้อมจ่ายเงินค่อยเติมเครดิต fal.ai หรือลอง Replicate (เครดิตฟรีตอนสมัคร) แล้วตั้ง
+1. ผู้ใช้เช็ก nav bar ถาวรจริงในเบราว์เซอร์ (ไฮไลต์ปุ่มถูกหน้าไหม กดสลับหน้าได้ไหม)
+2. (พักไว้) ถ้าพร้อมจ่ายเงินค่อยเติมเครดิต fal.ai หรือลอง Replicate (เครดิตฟรีตอนสมัคร) แล้วตั้ง
    `NUXT_TRY_ON_PROVIDER=fal-omnigen` ทั้ง `.env`+Vercel + merge `main`→`prod`
-2. ผู้ใช้ทดสอบติดตั้งแอปจริงบน Android/iOS เอง (push ทดสอบผ่านแล้วบน desktop Chrome)
-3. ผู้ใช้ทดสอบ "ลบ twin"/"ลบข้อมูลทั้งหมด" (S15) เอง — **ห้าม Claude รันแทนแม้ผู้ใช้จะขอให้ช่วยเทส**
-4. ⚠️ บัญชี `srayuththcanthrsiri77@gmail.com` ตั้ง `daily_quota=100` ชั่วคราว (ปกติ 5) — ถามก่อนปรับกลับ
-อื่น ๆ: เชิญ VoramethP เข้า repo ใหม่ · nav bar ถาวร
+3. ผู้ใช้ทดสอบติดตั้งแอปจริงบน Android/iOS (push ทดสอบผ่านแล้วบน desktop Chrome)
+4. ผู้ใช้ทดสอบ "ลบ twin"/"ลบข้อมูลทั้งหมด" (S15) เอง — **ห้าม Claude รันแทนแม้ผู้ใช้จะขอให้ช่วยเทส**
+5. ⚠️ บัญชี `srayuththcanthrsiri77@gmail.com` ตั้ง `daily_quota=100` ชั่วคราว (ปกติ 5) — ถามก่อนปรับกลับ
+อื่น ๆ: เชิญ VoramethP
 
 ## กับดักที่เคยเจอ
 - repo **public** — commit ใช้อีเมล noreply ของ GitHub ห้ามเปลี่ยนกลับ ต้องมี local `git config user.email` ตั้งไว้เสมอ
 - build: JSON เข้า SQL cast `::text::jsonb` เสมอ · pin `typescript@6` · npm 11 บล็อก install script → รัน
   `npx nuxt prepare` เองหลัง `npm i` รอบแรก
-- **PKCE → Claude ล็อกอินแทนผู้ใช้ไม่ได้เลย** — fallback: สคริปต์ node ต่อ `NUXT_DATABASE_URL`/secret key ตรง
-  ยิง business logic ในนามผู้ใช้แทน (ลบทิ้งทุกครั้ง) — **ยกเว้นลบข้อมูลถาวร ห้ามใช้วิธีนี้เด็ดขาด**
+- **PKCE → Claude ล็อกอินแทนผู้ใช้ไม่ได้เลย** — fallback: สคริปต์ node ต่อ DB/secret key ตรง ยิง business
+  logic ในนามผู้ใช้แทน (ลบทิ้งทุกครั้ง) — **ยกเว้นลบข้อมูลถาวร ห้ามใช้วิธีนี้เด็ดขาด**
 - เครื่องนี้ไม่มี `curl` — ใช้ `node -e` + `fetch()` แทน · Postgres ทดสอบต้องสร้าง cluster ใหม่ทุกเซสชัน (สูตรใน
   HANDOFF, ติดตั้งถาวรแล้ว)
 - **`useFetch('/api/x/${id}')` เดา type ไม่ได้ ถ้ามี route พี่น้อง literal ระดับเดียวกัน** — ใส่ generic
   `useFetch<T>(...)` เอง
 - dev server ตายเงียบได้ (`ERR_CONNECTION_REFUSED`) — เช็ก `lsof -i :3000` ก่อนสรุปว่าเป็นบั๊ก เปิดใหม่ด้วย
   `preview_start`
-- **Vercel: Production Branch ต้องมีจริง · deploy แรกขึ้น Production เสมอ · GitHub App ติดตั้งได้แค่บน repo ที่
-  เป็นเจ้าของเอง** (public เห็นได้ไม่ใช่ติดตั้งได้) · **Gmail Custom SMTP โชว์ผู้ส่งเป็น "ฉัน"** ค้นต้อง
-  `in:anywhere` — รายละเอียดดู WORKLOG "Deploy Vercel"
+- **Vercel: Production Branch ต้องมีจริง · deploy แรกขึ้น Production เสมอ · GitHub App ติดตั้งได้แค่บน repo
+  ที่เป็นเจ้าของเอง** · **Gmail Custom SMTP โชว์ผู้ส่งเป็น "ฉัน"** ค้นต้อง `in:anywhere` — ดู WORKLOG
+  "Deploy Vercel"
 
 ---
 📜 ประวัติเต็ม: `docs/WORKLOG.md` · 📐 กฎทั้งหมด: `CLAUDE.md` · 📖 คำศัพท์: `CONTEXT.md`
