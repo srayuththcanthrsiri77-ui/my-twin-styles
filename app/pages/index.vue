@@ -1,5 +1,6 @@
 <script setup lang="ts">
 // S05 Lookbook — หน้าแรกของแอป · ผู้ใช้ใหม่ที่ยังไม่ข้าม onboarding ถูกพาไป S04 (Q20)
+definePageMeta({ layout: 'tabs' })
 // ยิงสามคำขอพร้อมกันแทนการรอทีละอัน (await ...; await ...; await ... = ต่อคิว ช้ากว่า Promise.all)
 const [{ data: progress }, { data, status: fetchStatus }, { data: occasions }] = await Promise.all([
   useFetch('/api/me/progress'),
@@ -28,16 +29,10 @@ const isEmpty = computed(() => !data.value?.pending.length && !data.value?.looks
 
 <template>
   <main class="mx-auto flex min-h-dvh max-w-md flex-col gap-4 p-4 pb-24">
-    <header class="flex items-center justify-between pt-2">
+    <header class="pt-2">
       <h1 class="text-xl font-bold">
         ลุคของฉัน
       </h1>
-      <div class="flex gap-2">
-        <UButton to="/builder" icon="i-lucide-plus" aria-label="ลองชุด" />
-        <!-- ยังไม่มีแถบเมนูล่าง 4 ปุ่มถาวร (S17 ค้างอยู่) — ใส่ทางลัดไปตู้เสื้อผ้า/โปรไฟล์ไว้ก่อนกันหาไม่เจอ -->
-        <UButton to="/wardrobe" icon="i-lucide-shirt" variant="ghost" color="neutral" aria-label="ตู้เสื้อผ้า" />
-        <UButton to="/profile" icon="i-lucide-user" variant="ghost" color="neutral" aria-label="โปรไฟล์" />
-      </div>
     </header>
 
     <!-- โครงกำลังโหลด -->
