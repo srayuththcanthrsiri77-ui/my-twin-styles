@@ -24,7 +24,12 @@ const isActive = (to: string) => to === '/' ? route.path === '/' : route.path.st
         class="flex flex-1 flex-col items-center gap-0.5 py-2 text-xs"
         :class="isActive(tab.to) ? 'text-primary' : 'text-dimmed'"
       >
-        <UIcon :name="tab.icon" class="size-6" />
+        <span
+          class="flex size-9 items-center justify-center rounded-full"
+          :class="isActive(tab.to) ? 'bg-primary/15' : ''"
+        >
+          <UIcon :name="tab.icon" class="size-6" />
+        </span>
         {{ tab.label }}
       </NuxtLink>
     </div>
