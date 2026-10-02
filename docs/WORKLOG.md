@@ -977,9 +977,38 @@ VTON) ฟรีจริงแต่รันบน **CPU ช้ามาก** (
 - padding ด้านล่างของ `main` ปรับเป็น `pb-24` ให้ตรงกันทั้ง 3 หน้า (index/wardrobe มี `pb-24` อยู่แล้วตั้งแต่
   แรก น่าจะเผื่อพื้นที่ไว้ให้ nav bar ตั้งแต่ตอนนั้น — profile เปลี่ยนจาก `pb-8` เป็น `pb-24` ให้ตรงกัน)
 
-**Verify:** `npm run check` ผ่าน (typecheck + unit 57) · เปิด `/login` ในเบราว์เซอร์ไม่มี console error ·
-**ยัง verify คลิกจริงบนหน้าที่มี nav bar ไม่ได้** เพราะต้องล็อกอินก่อน (Claude ทำเองไม่ได้ตามเคย) — รอผู้ใช้
-เช็กว่าไฮไลต์ปุ่มถูกหน้า กดสลับหน้าได้ปกติ และไม่มีเนื้อหาหน้าไหนโดนแถบล่างบัง
+**Verify (ตอนเขียน):** `npm run check` ผ่าน (typecheck + unit 57) · เปิด `/login` ในเบราว์เซอร์ไม่มี console
+error · **ยัง verify คลิกจริงบนหน้าที่มี nav bar ไม่ได้** เพราะต้องล็อกอินก่อน (Claude ทำเองไม่ได้ตามเคย)
+
+## nav bar ไม่ขึ้นเลย → เจอว่า app.vue ไม่มี NuxtLayout (2026-10-02)
+
+ผู้ใช้ล็อกอินเข้ามาเช็ก nav bar ที่เพิ่งทำเสร็จ — **ไม่ขึ้นเลยแม้แต่น้อย** ทั้งที่ `npm run check` ผ่านและ
+ไม่มี error ใน dev server log restart ไปหลายรอบก็ไม่ขึ้น
+
+ไล่ดู `app/app.vue` พบสาเหตุจริง:
+```vue
+<template>
+  <UApp>
+    <NuxtPage />
+  </UApp>
+</template>
+```
+**ไม่มี `<NuxtLayout>` ครอบ `<NuxtPage />` เลย** — Nuxt ต้องมี `<NuxtLayout>` ถึงจะ resolve และ render
+layout ที่ประกาศผ่าน `definePageMeta({ layout: 'tabs' })` ได้ ถ้าไม่มี การตั้ง `layout` จะถูกเก็บไว้เฉยๆ
+ไม่ส่งผลอะไรเลยแบบเงียบๆ (ไม่ error ไม่ warning) เพราะไฟล์นี้ไม่เคยถูกแก้มาตั้งแต่ตั้งโปรเจกต์ (สแกฟโฟลด์
+เริ่มต้นของ Nuxt ไม่ได้ใส่ `<NuxtLayout>` มาให้อัตโนมัติด้วย) และไม่เคยมีหน้าไหนในโปรเจกต์ตั้ง `layout`
+มาก่อนเลยจนถึงตอนนี้ เลยไม่เคยมีใครสังเกตเห็นปัญหานี้
+
+แก้โดยเพิ่ม `<NuxtLayout><NuxtPage /></NuxtLayout>` ครอบใน `app.vue` — `npm run check` ผ่านเหมือนเดิม
+restart แล้วผู้ใช้ยืนยันว่า nav bar ขึ้นจริงแล้ว
+
+**บทเรียน:** เวลา `definePageMeta({ layout })` "ไม่มีผลอะไรเลย" โดยไม่มี error ให้เช็ก `app.vue` ว่ามี
+`<NuxtLayout>` อยู่จริงก่อนเป็นอันดับแรก ก่อนจะไปสงสัยเรื่อง dev server cache/restart
+
+**ปัญหาที่ 2 ระหว่างทาง (ไม่เกี่ยวกับ nav bar):** ตอนขอ magic link ใหม่เพื่อทดสอบ เจอ "ลิงก์ใช้งานไม่ได้แล้ว"
+— สาเหตุคือ `.env`'s `NUXT_PUBLIC_SITE_URL` ยังเป็น `https://my-twin-styles.vercel.app` ค้างมาจากตอนทดสอบ
+fal.ai (ดู WORKLOG ก่อนหน้า) ทำให้ magic link ที่ขอจาก `localhost:3000` ถูกสร้างด้วย `emailRedirectTo` ชี้ไป
+Vercel แทน เกิด PKCE mismatch (code_verifier เก็บไว้คนละ origin) แก้โดยเปลี่ยนกลับเป็น `http://localhost:3000`
 
 ---
 
