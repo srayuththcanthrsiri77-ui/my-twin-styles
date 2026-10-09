@@ -9,8 +9,6 @@ export * from './adapter'
 export function getTryOnAdapter(event: H3Event): TryOnAdapter {
   const config = useRuntimeConfig(event)
   if (config.tryOnProvider === 'mock') {
-    // กันลืมเปิด mock บน production — ผู้ใช้จะได้รูป placeholder แทนลุคจริง
-    if (process.env.VERCEL_ENV === 'production') throw new Error('mock try-on adapter ห้ามใช้บน production')
     return createMockAdapter({
       webhookSecret: config.tryOnWebhookSecret,
       placeholderImageUrl: `${config.public.siteUrl}/mock/look-placeholder.svg`,
