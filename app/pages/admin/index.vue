@@ -35,7 +35,7 @@ async function saveUserQuota(u: AdminUser) {
     toast.add({ title: 'บันทึกโควต้าแล้ว', color: 'success' })
   }
   catch (err) {
-    toast.add({ title: 'บันทึกไม่สำเร็จ', description: (err as Error).message, color: 'error' })
+    toast.add({ title: 'บันทึกไม่สำเร็จ', description: friendlyErrorMessage(err), color: 'error' })
   }
   finally {
     savingUserId.value = null
@@ -54,7 +54,7 @@ async function saveCap() {
     toast.add({ title: 'บันทึกเพดานรวมแล้ว', color: 'success' })
   }
   catch (err) {
-    toast.add({ title: 'บันทึกไม่สำเร็จ', description: (err as Error).message, color: 'error' })
+    toast.add({ title: 'บันทึกไม่สำเร็จ', description: friendlyErrorMessage(err), color: 'error' })
   }
   finally {
     savingCap.value = false

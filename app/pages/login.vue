@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // S01 เข้าสู่ระบบ — Google หรือ magic link · ครั้งแรก = สมัครให้อัตโนมัติ (ADR-0002)
-// กรอกรหัส 6 หลักแทนกดลิงก์ — มือถือบางเครื่อง/บางแอปอีเมลสแกนลิงก์ล่วงหน้าจนลิงก์โดนใช้ไปก่อนผู้ใช้กด (otp_expired)
+// กรอกรหัสจากอีเมลแทนกดลิงก์ — มือถือบางเครื่อง/บางแอปอีเมลสแกนลิงก์ล่วงหน้าจนลิงก์โดนใช้ไปก่อนผู้ใช้กด (otp_expired)
 const supabase = useSupabaseClient()
 const toast = useToast()
 const email = ref('')
@@ -13,8 +13,8 @@ async function sendCode() {
   sending.value = true
   const { error } = await supabase.auth.signInWithOtp({ email: email.value })
   sending.value = false
-  if (error) toast.add({ title: 'ส่งรหัสไม่สำเร็จ', description: error.message, color: 'error' })
-  else { codeSent.value = true; toast.add({ title: 'ส่งรหัสแล้ว', description: 'เปิดอีเมลแล้วกรอกรหัส 6 หลักด้านล่าง', color: 'success' }) }
+  if (error) toast.add({ title: 'ส่งรหัสไม่สำเร็จ', description: friendlyErrorMessage(error), color: 'error' })
+  else { codeSent.value = true; toast.add({ title: 'ส่งรหัสแล้ว', description: 'เปิดอีเมลแล้วกรอกรหัสด้านล่าง', color: 'success' }) }
 }
 
 async function verifyCode() {
@@ -22,7 +22,7 @@ async function verifyCode() {
   // copy รหัสจากอีเมลมักติดช่องว่างหรือขึ้นบรรทัดใหม่มาด้วย ต้องตัดก่อนส่งไปเช็ก
   const { error } = await supabase.auth.verifyOtp({ email: email.value, token: code.value.trim(), type: 'email' })
   verifying.value = false
-  if (error) toast.add({ title: 'รหัสไม่ถูกต้อง', description: error.message, color: 'error' })
+  if (error) toast.add({ title: 'รหัสไม่ถูกต้อง', description: friendlyErrorMessage(error), color: 'error' })
 }
 </script>
 

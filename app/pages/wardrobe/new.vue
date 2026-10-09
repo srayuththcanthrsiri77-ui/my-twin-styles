@@ -62,7 +62,7 @@ async function onFile(e: Event) {
   }
   catch (err) {
     phase.value = 'pick'
-    toast.add({ title: 'อัปโหลดรูปไม่สำเร็จ', description: (err as Error).message, color: 'error' })
+    toast.add({ title: 'อัปโหลดรูปไม่สำเร็จ', description: friendlyErrorMessage(err), color: 'error' })
   }
 }
 
@@ -106,8 +106,7 @@ async function save() {
     phase.value = 'saved'
   }
   catch (err) {
-    const e = err as { data?: { message?: string }, message: string }
-    toast.add({ title: 'บันทึกชิ้นไม่สำเร็จ', description: e.data?.message ?? e.message, color: 'error' })
+    toast.add({ title: 'บันทึกชิ้นไม่สำเร็จ', description: friendlyErrorMessage(err), color: 'error' })
   }
   finally {
     saving.value = false

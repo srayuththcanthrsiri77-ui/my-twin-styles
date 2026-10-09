@@ -21,7 +21,7 @@ async function deleteRemix() {
     await navigateTo(`/looks/${compare.value.source.id}`)
   }
   catch (err) {
-    toast.add({ title: 'ลบไม่สำเร็จ', description: (err as Error).message, color: 'error' })
+    toast.add({ title: 'ลบไม่สำเร็จ', description: friendlyErrorMessage(err), color: 'error' })
   }
   finally {
     deleting.value = false

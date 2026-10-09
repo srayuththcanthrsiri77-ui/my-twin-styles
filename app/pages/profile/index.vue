@@ -26,7 +26,7 @@ async function saveName() {
     toast.add({ title: 'บันทึกชื่อแล้ว', color: 'success' })
   }
   catch (err) {
-    toast.add({ title: 'บันทึกไม่สำเร็จ', description: (err as Error).message, color: 'error' })
+    toast.add({ title: 'บันทึกไม่สำเร็จ', description: friendlyErrorMessage(err), color: 'error' })
   }
   finally {
     savingName.value = false
@@ -53,7 +53,7 @@ async function confirmDeleteTwin() {
     toast.add({ title: 'ลบ twin แล้ว', color: 'success' })
   }
   catch (err) {
-    toast.add({ title: 'ลบไม่สำเร็จ', description: (err as Error).message, color: 'error' })
+    toast.add({ title: 'ลบไม่สำเร็จ', description: friendlyErrorMessage(err), color: 'error' })
   }
   finally {
     deletingTwin.value = false
@@ -76,7 +76,7 @@ async function confirmDeleteAll() {
     await navigateTo('/login')
   }
   catch (err) {
-    toast.add({ title: 'ลบไม่สำเร็จ', description: (err as Error).message, color: 'error' })
+    toast.add({ title: 'ลบไม่สำเร็จ', description: friendlyErrorMessage(err), color: 'error' })
     deletingAll.value = false
   }
 }

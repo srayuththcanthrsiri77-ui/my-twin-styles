@@ -53,6 +53,9 @@ async function enableNotifications() {
       toast.add({ title: 'เปิดการแจ้งเตือนไม่สำเร็จ', description: 'ตรวจสอบสิทธิ์การแจ้งเตือนของเบราว์เซอร์', color: 'warning' })
     }
   }
+  catch (err) {
+    toast.add({ title: 'เปิดการแจ้งเตือนไม่สำเร็จ', description: friendlyErrorMessage(err), color: 'error' })
+  }
   finally {
     subscribing.value = false
   }

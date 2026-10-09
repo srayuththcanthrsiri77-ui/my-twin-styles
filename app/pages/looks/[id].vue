@@ -27,7 +27,7 @@ async function toggleFavorite() {
     look.value.isFavorite = next
   }
   catch (err) {
-    toast.add({ title: 'บันทึกไม่สำเร็จ', description: (err as Error).message, color: 'error' })
+    toast.add({ title: 'บันทึกไม่สำเร็จ', description: friendlyErrorMessage(err), color: 'error' })
   }
   finally {
     savingFavorite.value = false
@@ -48,7 +48,7 @@ async function saveNote() {
     toast.add({ title: 'บันทึกโน้ตแล้ว', color: 'success' })
   }
   catch (err) {
-    toast.add({ title: 'บันทึกโน้ตไม่สำเร็จ', description: (err as Error).message, color: 'error' })
+    toast.add({ title: 'บันทึกโน้ตไม่สำเร็จ', description: friendlyErrorMessage(err), color: 'error' })
   }
   finally {
     savingNote.value = false
@@ -67,7 +67,7 @@ async function toggleOccasion(occasionId: string) {
     look.value.occasionIds = next
   }
   catch (err) {
-    toast.add({ title: 'บันทึกโอกาสไม่สำเร็จ', description: (err as Error).message, color: 'error' })
+    toast.add({ title: 'บันทึกโอกาสไม่สำเร็จ', description: friendlyErrorMessage(err), color: 'error' })
   }
   finally {
     savingOccasions.value = false
@@ -87,7 +87,7 @@ async function addOccasion() {
     await toggleOccasion(res.occasion.id)
   }
   catch (err) {
-    toast.add({ title: 'เพิ่มโอกาสไม่สำเร็จ', description: (err as Error).message, color: 'error' })
+    toast.add({ title: 'เพิ่มโอกาสไม่สำเร็จ', description: friendlyErrorMessage(err), color: 'error' })
   }
   finally {
     addingOccasion.value = false
@@ -120,7 +120,7 @@ async function openShare() {
     }
   }
   catch (err) {
-    toast.add({ title: 'เปิดลิงก์แชร์ไม่สำเร็จ', description: (err as Error).message, color: 'error' })
+    toast.add({ title: 'เปิดลิงก์แชร์ไม่สำเร็จ', description: friendlyErrorMessage(err), color: 'error' })
     shareOpen.value = false
     shareChecked = false
   }
@@ -151,7 +151,7 @@ async function revokeShare() {
     toast.add({ title: 'เพิกถอนลิงก์แล้ว', color: 'success' })
   }
   catch (err) {
-    toast.add({ title: 'เพิกถอนไม่สำเร็จ', description: (err as Error).message, color: 'error' })
+    toast.add({ title: 'เพิกถอนไม่สำเร็จ', description: friendlyErrorMessage(err), color: 'error' })
   }
   finally {
     revokingShare.value = false
@@ -172,7 +172,7 @@ async function submitDislike(reason: typeof DISLIKE_REASONS[number]) {
     toast.add({ title: 'ขอบคุณสำหรับความเห็น', color: 'success' })
   }
   catch (err) {
-    toast.add({ title: 'ส่งความเห็นไม่สำเร็จ', description: (err as Error).message, color: 'error' })
+    toast.add({ title: 'ส่งความเห็นไม่สำเร็จ', description: friendlyErrorMessage(err), color: 'error' })
   }
   finally {
     submittingDislike.value = false

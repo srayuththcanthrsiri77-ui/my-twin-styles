@@ -117,8 +117,7 @@ async function submit() {
     await refreshQuota()
   }
   catch (err) {
-    const e = err as { data?: { message?: string }, message: string }
-    toast.add({ title: 'ลองชุดไม่สำเร็จ', description: e.data?.message ?? e.message, color: 'error' })
+    toast.add({ title: 'ลองชุดไม่สำเร็จ', description: friendlyErrorMessage(err), color: 'error' })
   }
   finally {
     submitting.value = false

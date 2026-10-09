@@ -1081,6 +1081,30 @@ Claude เช็คผลได้แค่ฝั่ง fetch หลัง push 
 หน้าจอหลักสำเร็จ เปิดเป็น standalone จริง** (ไม่มีแถบ URL เบราว์เซอร์) ยืนยันจากผู้ใช้เช่นกัน ถือว่า S17 PWA
 ติดตั้งจริงบนมือถือ verify ครบแล้ว และงานหลักทั้งหมดของโปรเจกต์พร้อมส่งอาจารย์ตรวจ (deadline 12 ต.ค. 2026)
 
+## ปรับปรุงการจับ error ทั้งแอป (2026-10-09)
+
+ผู้ใช้ขอให้ปรับปรุงการจับ error "ทั้งแอปโดยรวม" — ส่ง subagent (Explore) ไปสำรวจก่อนว่ามีปัญหาตรงไหนบ้าง
+แทนที่จะเดาเอง เจอ 4 กลุ่มปัญหา: (1) 19 จุดโชว์ `error.message` ดิบเป็นภาษาอังกฤษให้ผู้ใช้เห็นตรง ๆ
+(2) ไม่มี `app/error.vue` (หน้า error กลางของ Nuxt) (3) `InstallPushCard.vue` ปุ่มเปิดแจ้งเตือนพังเงียบถ้า
+`subscribe()` throw (ไม่มี catch) (4) API หลายจุดใน `server/api/**` ไม่ห่อ try/catch —ข้อ 4 เป็นงานใหญ่กว่า
+scope ที่เหลือก่อน deadline เลยข้ามไปก่อน (ไม่มีจุดไหนรั่วข้อมูลลับ แค่โยน error ดิบใส่ client เฉย ๆ)
+
+แก้ 3 ข้อแรก:
+- สร้าง `app/utils/error.ts` → `friendlyErrorMessage(error)` ใช้ร่วมกันทุกจุด ตรวจ `error.data?.message`
+  ก่อน (ข้อความไทยที่ server ตั้งใจ `createError()` มาอยู่แล้ว เช่น "โควต้าวันนี้หมดแล้ว" จาก
+  `try-ons.post.ts`) ใช้ตรง ๆ ถ้ามี ไม่งั้น fallback เป็นข้อความทั่วไป (คงเคส rate-limit ที่มีเลขวินาทีไว้
+  เฉพาะ เพราะเป็นข้อมูลที่เป็นประโยชน์จริง) — **ไม่ได้ทำ error-code dictionary ใหญ่ ๆ เกินจำเป็น**
+- แทนที่ `(err as Error).message` / `e.data?.message ?? e.message` ทั้ง 19 จุดด้วย `friendlyErrorMessage()`
+  (login.vue, wardrobe/new.vue, twin/new.vue, builder/index.vue, looks/[id].vue ×7, profile/index.vue ×3,
+  remix/[id].vue, admin/index.vue ×2)
+- เพิ่ม `app/error.vue` (หน้า error กลาง ภาษาไทย + ปุ่มกลับหน้าแรกผ่าน `clearError()`)
+- เพิ่ม `catch` ใน `InstallPushCard.vue` ที่ขาดไป
+
+ระหว่างแก้เจอ bug เล็กที่หลงเหลือจาก fix ล็อกอินรอบก่อน: toast ตอนส่งรหัสสำเร็จยังเขียน "กรอกรหัส 6 หลัก"
+ทั้งที่จริงเป็น 8 หลัก แก้ให้ตรงด้วย
+
+`npm run check` ผ่านหมดทุกรอบ ยังไม่ได้ merge เข้า `prod` (รอผู้ใช้สั่ง)
+
 ---
 
 ## งานถัดไป

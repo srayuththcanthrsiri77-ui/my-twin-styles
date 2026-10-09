@@ -48,7 +48,7 @@ async function onFile(e: Event) {
   }
   catch (err) {
     phase.value = 'guide'
-    toast.add({ title: 'อัปโหลดรูปไม่สำเร็จ', description: (err as Error).message, color: 'error' })
+    toast.add({ title: 'อัปโหลดรูปไม่สำเร็จ', description: friendlyErrorMessage(err), color: 'error' })
   }
 }
 
@@ -71,8 +71,7 @@ async function submit(acceptWarnings: boolean) {
     }
   }
   catch (err) {
-    const e = err as { data?: { message?: string }, message: string }
-    toast.add({ title: 'บันทึกท่าไม่สำเร็จ', description: e.data?.message ?? e.message, color: 'error' })
+    toast.add({ title: 'บันทึกท่าไม่สำเร็จ', description: friendlyErrorMessage(err), color: 'error' })
     phase.value = 'result'
   }
   finally {

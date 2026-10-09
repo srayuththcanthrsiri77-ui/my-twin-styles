@@ -19,6 +19,9 @@ Mobile-first PWA (UI ไทย) — ผู้ใช้สร้าง twin จ�
   กรอกรหัส 8 หลักจากอีเมลแทนกดลิงก์ (`app/pages/login.vue` + ต้องเพิ่ม `{{ .Token }}` ใน Supabase email
   template เอง) อีกจุดที่แก้คือต้อง `.trim()` รหัสก่อนส่ง (copy จากอีเมลติดช่องว่างมาด้วยได้)
 - ✅ **S17 PWA ติดตั้งจริงบนมือถือสำเร็จแล้ว**: ติดตั้งลงหน้าจอหลักได้ เปิดเป็น standalone จริง (ไม่มีแถบ URL)
+- ✅ **ปรับปรุงการจับ error ทั้งแอปแล้ว**: `app/utils/error.ts` (`friendlyErrorMessage()`) แทน error ดิบ
+  ภาษาอังกฤษ 19 จุด · เพิ่ม `app/error.vue` (หน้า error กลาง) · แก้ silent fail ใน `InstallPushCard.vue`
+  **ยังไม่ merge เข้า prod** (commit บน main รอ push)
 - ✅ S01–S16 ครบ verify จริงแล้วทุกหน้า · S17 PWA+Push verify จริงแล้วบน desktop Chrome
 - ⏸️ AI provider จริง (fal.ai) เขียนเสร็จแต่พักไว้ (ADR-0008) — ไม่มีเจ้าไหนฟรีจริง ใช้ `mock` ต่อ (ตอนนี้
   `mock` รันบน production ได้แล้วหลังลบการ์ดออก)
