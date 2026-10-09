@@ -19,7 +19,8 @@ async function sendCode() {
 
 async function verifyCode() {
   verifying.value = true
-  const { error } = await supabase.auth.verifyOtp({ email: email.value, token: code.value, type: 'email' })
+  // copy รหัสจากอีเมลมักติดช่องว่างหรือขึ้นบรรทัดใหม่มาด้วย ต้องตัดก่อนส่งไปเช็ก
+  const { error } = await supabase.auth.verifyOtp({ email: email.value, token: code.value.trim(), type: 'email' })
   verifying.value = false
   if (error) toast.add({ title: 'รหัสไม่ถูกต้อง', description: error.message, color: 'error' })
 }
@@ -43,9 +44,9 @@ async function verifyCode() {
 
     <form v-else class="flex flex-col gap-2" @submit.prevent="verifyCode">
       <p class="text-center text-sm text-muted">
-        ส่งรหัส 6 หลักไปที่ {{ email }} แล้ว
+        ส่งรหัสไปที่ {{ email }} แล้ว
       </p>
-      <UInput v-model="code" type="text" inputmode="numeric" placeholder="รหัส 6 หลัก" required />
+      <UInput v-model="code" type="text" inputmode="numeric" placeholder="รหัสจากอีเมล" required />
       <UButton type="submit" label="ยืนยันรหัส" :loading="verifying" block />
       <UButton label="ส่งรหัสใหม่" variant="ghost" size="xs" @click="codeSent = false" />
     </form>
