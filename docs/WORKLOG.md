@@ -1035,6 +1035,50 @@ Vercel แทน เกิด PKCE mismatch (code_verifier เก็บไว้
 แยกกัน: ผู้ใช้ทดสอบปุ่ม **"ลบ twin"** (S15) ด้วยตัวเองแล้ว — **ใช้งานได้จริง** (ทดสอบแค่ "ลบ twin" ไม่ได้ลอง
 "ลบข้อมูลทั้งหมด" ซึ่งลบบัญชีถาวร ยังไม่เคย verify และ Claude จะไม่รันให้เองเหมือนเดิม)
 
+## merge main→prod ครั้งแรก + เปลี่ยนล็อกอินจาก magic link เป็นรหัส OTP (2026-10-09)
+
+กลับมาทดสอบ "ติดตั้ง PWA บนมือถือจริง" ต่อ (ค้างจากก่อนหน้า) เจอบั๊กใหม่ที่บล็อกตั้งแต่ขั้นล็อกอิน:
+
+**ปัญหาที่ 1 — Vercel production ค้างโค้ดเก่า:** `NUXT_PUBLIC_SITE_URL` บน Vercel Production ยังเป็น
+`localhost:3000` (ตั้งไว้ตอน deploy ครั้งแรก ไม่เคยแก้) ทำให้ magic link พาไป localhost เสมอ — แก้โดยลบ
+env var แบบ Secret เดิมทิ้ง (แก้ในที่ไม่ได้ เพราะ Secret เป็น write-only สลับเป็น Config ไม่ได้) แล้วสร้างใหม่
+เป็น Type=Config ค่า `https://my-twin-styles.vercel.app` ติ๊กทั้ง Production+Preview แล้ว Redeploy
+
+เช็คแล้วพบว่า custom domain `my-twin-styles.vercel.app` (Production) **ค้างอยู่ที่ commit แรกสุดตอน deploy
+(`331479c`) มาตลอด** เพราะ Production Branch ผูกกับ `prod` ซึ่งไม่เคย merge โค้ดใหม่เข้าไปเลยตั้งแต่ deploy
+ครั้งแรก (ตั้งใจพักไว้ก่อนหน้านี้จนกว่าจะเลือก AI provider จริง) — nav bar/PWA ปรับปรุง/ADR-0008 ทั้งหมด
+13 commits ไม่เคยขึ้น production จริงเลย ตัดสินใจ **merge `main`→`prod` ทันที** (deadline ส่งงานกระชั้น)
+โดยไม่รอ AI provider เพราะ non-commercial ใช้แค่รีวิวให้อาจารย์ดู
+
+ผลที่ตามมา: การ์องกัน `mock` บน production (`server/utils/try-on/index.ts`, กันลืมเปิด mock ตอนขายจริง)
+จะบล็อก "ลองชุด" ทันที — **ลบการ์ดนี้ออก** (ไม่ใช่ปิดด้วย flag) เพราะโปรเจกต์นี้ยังไม่มีแผนขายจริง ถ้าวันหลัง
+จะเปิดให้คนทั่วไปใช้ค่อยพิจารณาใส่กลับหรือสลับ provider จริง
+
+**ปัญหาที่ 2 — magic link พังซ้ำบนมือถือแม้แก้ไขแล้ว:** ทดสอบจริงบน iPhone เจอ "ลิงก์ใช้งานไม่ได้แล้ว" 2 แบบ
+ต่อเนื่อง — (1) เปิดผ่าน in-app browser ของ Instagram แล้วกดลิงก์จาก Gmail in-app browser คนละ origin กัน
+(PKCE code_verifier หาไม่เจอ) (2) แก้ไปใช้ Safari ล้วนแล้วยังเจอ `error_code=otp_expired` จาก Supabase ตรงๆ
+แม้เป็นลิงก์ล่าสุด — สรุปว่าเป็นอาการคลาสสิกของ **อีเมล/บริการสแกนลิงก์ความปลอดภัยเปิด URL ล่วงหน้าก่อนผู้ใช้กด
+จริง ทำให้ token ใช้ครั้งเดียวถูกใช้ไปก่อน** เป็นปัญหาที่รู้จักกันดีของ Supabase magic link บนมือถือ
+
+**ทางแก้ถาวร:** เปลี่ยนจากกดลิงก์เป็น**กรอกรหัสจากอีเมลแทน** (`supabase.auth.verifyOtp({ email, token, type:
+'email' })`) ตัดปัญหา cross-origin และ link-prescan ทั้งหมด เพราะไม่มี URL ให้สแกนเลย — ต้องแก้ 2 จุด:
+1. `app/pages/login.vue` — เพิ่ม step 2 กรอกรหัสหลังกดส่ง (เก็บ UI เดิมไว้ ไม่ redesign ใหญ่)
+2. Supabase Dashboard → Authentication → Emails → Magic Link or OTP → เพิ่ม `{{ .Token }}` ในเนื้ออีเมล
+   (ค่า default ไม่โชว์ ต้องเพิ่มเอง — คนละจุดกับโค้ดในนี้ ต้องให้ผู้ใช้ทำเองผ่าน browser)
+
+ระหว่างดีบัก เจอว่า Supabase ส่ง token จริงเป็น **8 หลัก ไม่ใช่ 6** (เดาผิดตอนแรก) — ยืนยันด้วยการยิง
+`/auth/v1/admin/generate_link` ตรงด้วย secret key เทียบกับ `/auth/v1/verify` จริง (ไม่เดา) พบว่าโค้ด/ระบบ
+ถูกต้อง 100% ปัญหาจริงคือ **copy รหัสจากอีเมลติดช่องว่างมาด้วย** (ทดสอบซ้ำด้วยการแปะ space ต่อท้าย token ที่
+ถูกต้อง ได้ error เดียวกับที่ผู้ใช้เจอเป๊ะ) แก้ด้วย `.trim()` ก่อนส่งเข้า `verifyOtp` แก้ placeholder "6 หลัก"
+เป็นข้อความทั่วไปด้วย
+
+**กับดักเรื่อง deploy:** Claude Code auto-mode บล็อกคำสั่ง `git push origin prod` (classify เป็น
+"Production Deploy") โดยอัตโนมัติเสมอ ไม่ว่าจะ commit อะไร — ต้องให้ผู้ใช้รันเองผ่าน terminal ทุกครั้งที่มี
+fix ใหม่ (`git checkout prod && git merge main --ff-only && git push origin prod && git checkout main`)
+Claude เช็คผลได้แค่ฝั่ง fetch หลัง push เสร็จเท่านั้น
+
+**ล็อกอินด้วยรหัส OTP บนมือถือจริงสำเร็จแล้ว** (ยืนยันจากผู้ใช้) — งานถัดไปคือทดสอบติดตั้ง PWA จริงต่อ
+
 ---
 
 ## งานถัดไป
