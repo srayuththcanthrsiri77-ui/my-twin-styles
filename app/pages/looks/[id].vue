@@ -158,6 +158,23 @@ async function revokeShare() {
   }
 }
 
+// ลบลุค — ย้อนกลับไม่ได้ ใช้ล้างลุคทดสอบ/ตัวอย่างออกจากคลังภาพ
+const deleteLookOpen = ref(false)
+const deleteLookOpenModel = computed({ get: () => deleteLookOpen.value, set: v => (deleteLookOpen.value = v) })
+const deletingLook = ref(false)
+async function confirmDeleteLook() {
+  deletingLook.value = true
+  try {
+    await $fetch(`/api/looks/${id}`, { method: 'DELETE' })
+    toast.add({ title: 'ลบลุคแล้ว', color: 'success' })
+    await navigateTo('/')
+  }
+  catch (err) {
+    toast.add({ title: 'ลบไม่สำเร็จ', description: friendlyErrorMessage(err), color: 'error' })
+    deletingLook.value = false
+  }
+}
+
 // 👎 ไม่ถูกใจ — ใช้วัดคุณภาพ ไม่คืนโควต้า (CONTEXT.md)
 const dislikeOpen = ref(false)
 const dislikeOpenModel = computed({ get: () => dislikeOpen.value, set: v => (dislikeOpen.value = v) })
@@ -254,10 +271,16 @@ async function submitDislike(reason: typeof DISLIKE_REASONS[number]) {
       icon="i-lucide-columns-2" variant="soft" block
     />
 
-    <UButton
-      v-if="!look.dislikeReason" label="👎 ไม่ถูกใจ" variant="ghost" color="neutral" size="sm"
-      @click="dislikeOpen = true"
-    />
+    <div class="flex gap-2">
+      <UButton
+        v-if="!look.dislikeReason" label="👎 ไม่ถูกใจ" variant="ghost" color="neutral" size="sm" class="flex-1"
+        @click="dislikeOpen = true"
+      />
+      <UButton
+        label="ลบลุค" icon="i-lucide-trash-2" variant="ghost" color="error" size="sm" class="flex-1"
+        @click="deleteLookOpen = true"
+      />
+    </div>
     <p v-else class="text-center text-xs text-muted">
       คุณให้ 👎 ไว้: {{ DISLIKE_REASON_LABEL[look.dislikeReason as typeof DISLIKE_REASONS[number]] }}
     </p>
@@ -303,6 +326,18 @@ async function submitDislike(reason: typeof DISLIKE_REASONS[number]) {
             v-if="shareMeta" label="เพิกถอนลิงก์" variant="ghost" color="error" size="sm"
             :loading="revokingShare" @click="revokeShare"
           />
+        </div>
+      </template>
+    </UDrawer>
+
+    <!-- ยืนยันก่อนลบลุค — ย้อนกลับไม่ได้ -->
+    <UDrawer v-model:open="deleteLookOpenModel" title="ลบลุคนี้?">
+      <template #body>
+        <div class="flex flex-col gap-3">
+          <p class="text-sm text-muted">
+            ลบแล้วไม่สามารถกู้คืนได้ รูปผลลัพธ์จะถูกลบออกจากระบบถาวร
+          </p>
+          <UButton label="ยืนยันลบ" color="error" block :loading="deletingLook" @click="confirmDeleteLook" />
         </div>
       </template>
     </UDrawer>
