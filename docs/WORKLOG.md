@@ -1152,6 +1152,24 @@ WebSearch/WebFetch ก่อนใส่ — เจอ 2 รายการท�
 
 **อัปเดต 2026-10-16:** ผู้ใช้รัน merge `main`→`prod` เองใน terminal (`e62f766..72fb1fd`) Vercel deploy แล้ว
 ผู้ใช้ทดสอบบนมือถือจริง: กรอกรหัส OTP แล้วเด้งไปหน้าแรกสำเร็จ — **บั๊กล็อกอินปิดจบ**
+(⚠️ ภายหลังพบว่าไม่จริง — ดูหัวข้อถัดไป)
+
+---
+
+## Vercel build พังเงียบ ๆ ตั้งแต่ 10 ต.ค. — prod ค้างที่ 9 ต.ค. (2026-10-16)
+
+ผู้ใช้แจ้งว่า prod ยังใช้ไม่ได้ ตรวจแล้วพบว่า:
+- bundle ที่ prod เสิร์ฟ (curl ตรง ไม่ผ่าน service worker) **ไม่มี `navigateTo('/')`** หลัง `verifyOtp`
+- GitHub Deployments: deploy ทุกครั้งตั้งแต่ `baf0c60` (10 ต.ค. 16:24 UTC) **failure ทั้งหมด** ทั้ง Preview และ
+  Production · สำเร็จครั้งสุดท้าย `8284601` (9 ต.ค.) → prod ค้างที่โค้ดวันนั้น รวมถึง `a09422a` ไม่เคยขึ้นจริง
+- `npx nuxt build` บนเครื่อง reproduce ได้: `v-else/v-else-if has no adjacent v-if` ใน `app/pages/looks/[id].vue`
+  — `baf0c60` (ปุ่มลบลุค) ห่อปุ่ม 👎 ที่มี `v-if` ไว้ใน `<div>` แต่ทิ้ง `<p v-else>` ไว้นอก div
+
+แก้: ย้าย `<p v-else>` เข้าไปใน div ต่อจากปุ่ม 👎 (commit `0382dbc`) · `nuxt build` + `npm run check` ผ่าน
+
+**ทำไมไม่มีใครเห็น:** `npm run check` (typecheck + vitest) ไม่ compile template · deploy ล้มแล้ว Vercel เก็บ
+build เก่าไว้เสิร์ฟต่อเงียบ ๆ · การที่ผู้ใช้ "ยืนยันบนมือถือผ่าน" น่าจะเป็นจังหวะที่ session ค้างอยู่แล้ว
+→ บทเรียน: ก่อนบอกว่าขึ้น prod แล้ว ต้องเช็กสถานะ deploy จริง (`gh api repos/<repo>/deployments`) ไม่ใช่แค่ git
 
 ---
 

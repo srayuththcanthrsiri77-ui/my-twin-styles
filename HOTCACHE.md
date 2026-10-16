@@ -20,9 +20,10 @@ Mobile-first PWA (UI ไทย) — ผู้ใช้สร้าง twin จ�
 - ✅ **แก้บั๊กล็อกอิน OTP ที่ "เข้าไม่ได้" เจอสาเหตุจริงครบ 3 ชั้น** (ดูรายละเอียดเต็มใน `docs/WORKLOG.md`):
   1. Supabase email template ยังมีลิงก์ `{{ .ConfirmationURL }}` ค้างคู่กับ `{{ .Token }}` → ลบออกแล้ว
   2. Gmail App Password ของ SMTP ถูกเพิกถอน → สร้างใหม่ + บันทึกใน Supabase SMTP Settings แล้ว
-  3. **บั๊กจริงในโค้ด**: `login.vue` ไม่มี `navigateTo('/')` หลัง verify สำเร็จ ค้างหน้า login ทั้งที่ backend
-     login สำเร็จจริง → แก้แล้ว commit `a09422a` · **ขึ้น `prod` แล้ว (`72fb1fd`) ผู้ใช้ยืนยันบนมือถือว่าล็อกอิน
-     แล้วเด้งไปหน้าแรกจริง (2026-10-16)**
+  3. **บั๊กจริงในโค้ด**: `login.vue` ไม่มี `navigateTo('/')` หลัง verify → แก้แล้ว `a09422a`
+- 🚨 **prod ค้างที่ build 9 ต.ค. (`8284601`)** — Vercel build พังทุกครั้งตั้งแต่ `baf0c60` (10 ต.ค.) เพราะ
+  `v-else` หลุดนอก div ใน `looks/[id].vue` → แก้แล้ว `0382dbc` บน `main` · **รอผู้ใช้ push `main` + merge
+  ขึ้น `prod`** แล้วค่อยเช็กว่า deploy สำเร็จ + ผู้ใช้ verify ล็อกอินบนมือถือใหม่ (ที่ว่า "ยืนยันผ่าน" เมื่อก่อนไม่จริง)
 - ⏳ ส่งไฟล์ `ลิงก์แอป-my-twin-styles.txt` ให้ผู้ใช้เอาไปใส่โฟลเดอร์ Google Drive ที่จะส่งอาจารย์แล้ว
   (Drive อัปโหลดลิงก์เปล่าตรง ๆ ไม่ได้ ต้องห่อเป็นไฟล์ก่อน)
 
@@ -43,6 +44,8 @@ Mobile-first PWA (UI ไทย) — ผู้ใช้สร้าง twin จ�
 
 ## กับดักที่เคยเจอ
 - repo **public** — commit ใช้อีเมล noreply ของ GitHub ห้ามเปลี่ยนกลับ · pin `typescript@6`
+- **`npm run check` ไม่ compile template Vue** — ก่อน merge ขึ้น prod ให้รัน `npx nuxt build` ด้วย · และเช็ก
+  deploy จริงด้วย `gh api repos/<repo>/deployments` (deploy ล้มแล้ว Vercel เสิร์ฟ build เก่าเงียบ ๆ)
 - **Vercel: Production Branch ผูกกับ `prod` ไม่ auto-sync กับ `main`** · **Claude Code บล็อก
   `git push origin prod` อัตโนมัติทุกครั้ง** ต้องให้ผู้ใช้รันเองทีละบรรทัด: `git checkout prod` →
   `git merge main --ff-only` → `git push origin prod` → `git checkout main`
