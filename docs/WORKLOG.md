@@ -1173,5 +1173,20 @@ build เก่าไว้เสิร์ฟต่อเงียบ ๆ · ก
 
 ---
 
+## prod ใช้ได้แล้ว + cron ยิงไม่ถึง + mock เป็นภาพ flat-lay (2026-10-16)
+
+- push `0382dbc` ขึ้น prod → Vercel deploy สำเร็จ (bundle มี navigateTo แล้ว) · **ผู้ใช้ยืนยันล็อกอิน OTP เด้งไป
+  หน้าแรกจริง** (รอบนี้ verify จาก bundle จริง ไม่ใช่แค่ git)
+- **ลุคค้าง "รอคิว/กำลังลอง" 3 อัน** = try_ons เก่าจาก 30 ก.ย.–1 ต.ค. · pg_cron `reconcile-try-ons` รันทุกนาที
+  แต่ `net._http_response` เป็น `Couldn't connect to server` 360/360 ครั้ง ขณะที่ prod `/api/cron/try-ons`
+  ตอบ 401 ปกติ → สงสัยว่า Vault `app_site_url` ยังเป็น localhost (Claude ถูกบล็อกไม่ให้อ่าน Vault — ถูกต้อง)
+  ให้ผู้ใช้เช็ก/แก้เองใน SQL Editor ด้วย `vault.update_secret(...)` แล้วค่อยดู status_code ใน `net._http_response`
+- **mock คืนภาพ flat-lay** (`c27b617`): ผู้ใช้เลือกทาง "ภาพรวมชิ้นที่เลือก" แทนจ่าย fal.ai · `flat-lay.ts` วางการ์ด
+  ตามช่องบนผืน 600×900 เป็น SVG ฝังรูปชิ้นแบบ data URI (ไม่เพิ่ม sharp กันเสี่ยง deploy พังอีก) · ส่งผ่าน
+  webhook เป็น `data:image/svg+xml,…` แล้ว `storeLook` fetch ได้ตรง ๆ · ไม่แตะรูปท่า (ADR-0003)
+  · trade-off: ไฟล์ลุคใหญ่ราว 1 MB/อัน (ฝัง JPEG ≤1600px) · ลุคเก่า 36 อันยังเป็น placeholder
+
+---
+
 ## งานถัดไป
 ดู `HOTCACHE.md`

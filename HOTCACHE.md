@@ -21,9 +21,11 @@ Mobile-first PWA (UI ไทย) — ผู้ใช้สร้าง twin จ�
   1. Supabase email template ยังมีลิงก์ `{{ .ConfirmationURL }}` ค้างคู่กับ `{{ .Token }}` → ลบออกแล้ว
   2. Gmail App Password ของ SMTP ถูกเพิกถอน → สร้างใหม่ + บันทึกใน Supabase SMTP Settings แล้ว
   3. **บั๊กจริงในโค้ด**: `login.vue` ไม่มี `navigateTo('/')` หลัง verify → แก้แล้ว `a09422a`
-- 🚨 **prod ค้างที่ build 9 ต.ค. (`8284601`)** — Vercel build พังทุกครั้งตั้งแต่ `baf0c60` (10 ต.ค.) เพราะ
-  `v-else` หลุดนอก div ใน `looks/[id].vue` → แก้แล้ว `0382dbc` บน `main` · **รอผู้ใช้ push `main` + merge
-  ขึ้น `prod`** แล้วค่อยเช็กว่า deploy สำเร็จ + ผู้ใช้ verify ล็อกอินบนมือถือใหม่ (ที่ว่า "ยืนยันผ่าน" เมื่อก่อนไม่จริง)
+- ✅ **prod deploy ได้อีกครั้ง** (build พังตั้งแต่ 10 ต.ค. เพราะ v-else หลุด → แก้ `0382dbc`) · ผู้ใช้ยืนยัน
+  ล็อกอิน OTP เด้งหน้าแรกจริงแล้ว
+- ⏳ **mock คืนภาพ flat-lay ของชิ้นที่เลือก** (`c27b617`) — รอผู้ใช้ push ขึ้น prod · ลุคเก่ายังเป็น placeholder
+- ⏳ **pg_cron ยิงไม่ถึงแอป** (`Couldn't connect`) → ลุคเก่า 3 อันค้าง "รอคิว/กำลังลอง" · น่าจะเป็น Vault
+  `app_site_url` = localhost — รอผู้ใช้แก้ใน SQL Editor แล้วเช็ก `net._http_response`
 - ⏳ ส่งไฟล์ `ลิงก์แอป-my-twin-styles.txt` ให้ผู้ใช้เอาไปใส่โฟลเดอร์ Google Drive ที่จะส่งอาจารย์แล้ว
   (Drive อัปโหลดลิงก์เปล่าตรง ๆ ไม่ได้ ต้องห่อเป็นไฟล์ก่อน)
 
