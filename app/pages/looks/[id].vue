@@ -276,14 +276,15 @@ async function submitDislike(reason: typeof DISLIKE_REASONS[number]) {
         v-if="!look.dislikeReason" label="👎 ไม่ถูกใจ" variant="ghost" color="neutral" size="sm" class="flex-1"
         @click="dislikeOpen = true"
       />
+      <!-- v-else ต้องติดกับ v-if ในพ่อเดียวกัน ไม่งั้น Vue compile ไม่ผ่าน (เคยทำ deploy พังทุกครั้ง) -->
+      <p v-else class="flex-1 self-center text-center text-xs text-muted">
+        คุณให้ 👎 ไว้: {{ DISLIKE_REASON_LABEL[look.dislikeReason as typeof DISLIKE_REASONS[number]] }}
+      </p>
       <UButton
         label="ลบลุค" icon="i-lucide-trash-2" variant="ghost" color="error" size="sm" class="flex-1"
         @click="deleteLookOpen = true"
       />
     </div>
-    <p v-else class="text-center text-xs text-muted">
-      คุณให้ 👎 ไว้: {{ DISLIKE_REASON_LABEL[look.dislikeReason as typeof DISLIKE_REASONS[number]] }}
-    </p>
 
     <UDrawer v-model:open="dislikeOpenModel" title="ผิดตรงไหน?">
       <template #body>
