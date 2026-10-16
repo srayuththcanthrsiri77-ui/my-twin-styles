@@ -23,6 +23,8 @@ async function verifyCode() {
   const { error } = await supabase.auth.verifyOtp({ email: email.value, token: code.value.trim(), type: 'email' })
   verifying.value = false
   if (error) toast.add({ title: 'รหัสไม่ถูกต้อง', description: friendlyErrorMessage(error), color: 'error' })
+  // ยืนยันสำเร็จแล้วต้องพาออกจากหน้า login เอง — หน้านี้ไม่มี middleware ไหนคอยเด้งออกให้อัตโนมัติ
+  else await navigateTo('/')
 }
 </script>
 
