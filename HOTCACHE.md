@@ -21,7 +21,8 @@ Mobile-first PWA (UI ไทย) — ผู้ใช้สร้าง twin จ�
   1. Supabase email template ยังมีลิงก์ `{{ .ConfirmationURL }}` ค้างคู่กับ `{{ .Token }}` → ลบออกแล้ว
   2. Gmail App Password ของ SMTP ถูกเพิกถอน → สร้างใหม่ + บันทึกใน Supabase SMTP Settings แล้ว
   3. **บั๊กจริงในโค้ด**: `login.vue` ไม่มี `navigateTo('/')` หลัง verify สำเร็จ ค้างหน้า login ทั้งที่ backend
-     login สำเร็จจริง → แก้แล้ว commit `a09422a` push `main` แล้ว **ยังไม่ merge ขึ้น `prod`**
+     login สำเร็จจริง → แก้แล้ว commit `a09422a` · **ขึ้น `prod` แล้ว (`72fb1fd`) ผู้ใช้ยืนยันบนมือถือว่าล็อกอิน
+     แล้วเด้งไปหน้าแรกจริง (2026-10-16)**
 - ⏳ ส่งไฟล์ `ลิงก์แอป-my-twin-styles.txt` ให้ผู้ใช้เอาไปใส่โฟลเดอร์ Google Drive ที่จะส่งอาจารย์แล้ว
   (Drive อัปโหลดลิงก์เปล่าตรง ๆ ไม่ได้ ต้องห่อเป็นไฟล์ก่อน)
 
@@ -35,18 +36,16 @@ Mobile-first PWA (UI ไทย) — ผู้ใช้สร้าง twin จ�
    (ถ้าต้องการให้อาจารย์เข้าง่าย ให้ล็อกอินค้างไว้ล่วงหน้าบนเครื่องที่จะ demo แทน)
 
 ## งานถัดไป
-1. **ให้ผู้ใช้ยืนยันว่า login fix ใช้ได้จริงที่เครื่อง/มือถือตัวเองก่อน** แล้วรันเองใน terminal (Claude Code
-   บล็อก push `prod` อัตโนมัติเสมอ): `git checkout prod && git merge main --ff-only && git push origin prod
-   && git checkout main` แล้ว `git push origin main` ให้ sync ด้วย
-2. เติมรูปจริงแทน placeholder ในไฟล์ Word (export จาก `docs/design/my-twin-styles.drawio` + สกรีนช็อต VS
+1. เติมรูปจริงแทน placeholder ในไฟล์ Word (export จาก `docs/design/my-twin-styles.drawio` + สกรีนช็อต VS
    Code) — พอเติมรูปแล้วกด Update Field สารบัญใหม่อีกรอบในเล่มก่อนส่งจริง (เลขหน้าจะขยับ)
-3. เช็กกับผู้ใช้ว่าส่งงานอาจารย์จริงหรือยัง (ผ่าน Google Drive) และเดดไลน์จริงตอนนี้คือเมื่อไหร่
-4. "ลบข้อมูลทั้งหมด" (ลบบัญชีถาวร) ยังไม่เคยทดสอบ — **ห้าม Claude รันแทนแม้ผู้ใช้จะขอให้ช่วยเทส**
+2. เช็กกับผู้ใช้ว่าส่งงานอาจารย์จริงหรือยัง (ผ่าน Google Drive) และเดดไลน์จริงตอนนี้คือเมื่อไหร่
+3. "ลบข้อมูลทั้งหมด" (ลบบัญชีถาวร) ยังไม่เคยทดสอบ — **ห้าม Claude รันแทนแม้ผู้ใช้จะขอให้ช่วยเทส**
 
 ## กับดักที่เคยเจอ
 - repo **public** — commit ใช้อีเมล noreply ของ GitHub ห้ามเปลี่ยนกลับ · pin `typescript@6`
 - **Vercel: Production Branch ผูกกับ `prod` ไม่ auto-sync กับ `main`** · **Claude Code บล็อก
-  `git push origin prod` อัตโนมัติทุกครั้ง** ต้องให้ผู้ใช้รันเองเสมอ
+  `git push origin prod` อัตโนมัติทุกครั้ง** ต้องให้ผู้ใช้รันเองทีละบรรทัด: `git checkout prod` →
+  `git merge main --ff-only` → `git push origin prod` → `git checkout main`
 - **Supabase Dashboard มีการ์ดโปรโมท "PREVIEW" ลอยบังปุ่ม Save พอดี** — กดแล้วเหมือนสำเร็จแต่ reload แล้ว
   หายไม่บันทึกจริง ต้องปิดการ์ด (×) ก่อนกด Save เสมอ แล้วเช็ก toast "Successfully updated..." ให้เห็นจริง
 - **ห้ามรัน diagnostic (`admin/generate_link`) แทรกระหว่างที่ผู้ใช้กำลังลองล็อกอินจริงขนานกัน** — รหัส OTP
